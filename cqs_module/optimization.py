@@ -55,7 +55,7 @@ def solve_combination_parameters(Q, r, which_opt=None):
 
         # Solve
         # comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-16})['x']
-        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-14})['x']
+        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-12})['x']
         # comb_params = qp(Q, r)['x']
 
     elif which_opt == 'inv':

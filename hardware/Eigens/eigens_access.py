@@ -24,9 +24,7 @@
     Access to the pre-known calculator.
 """
 
-from qiskit import QuantumCircuit, transpile
-from qiskit_ionq import IonQProvider
-
+from numpy import real, imag
 
 def eigen_calculator(Pauli_string, basis):
     if basis == 0:
@@ -63,9 +61,11 @@ def eigen_calculator(Pauli_string, basis):
         raise ValueError
     return basis, eigen
 
-def Hadamard_test(U):
+def Hadamard_test(U, alpha=1):
     # Initialize settings
-    # U = [[], [], ...] := [[column1], [column2], ...]
+    # Instead of a single unitary, we input a list of unitaries.
+    # U = [U1, U2, U3] = [[[], [], ...], [[], [], ...], [[], [], ...], [[], [], ...]]
+    # Each Ui = [[], [], ...] := [[column1], [column2], ...]
     width = len(U[0])
 
     # Create gates for the unitary
@@ -84,4 +84,10 @@ def Hadamard_test(U):
         coeff = 1
         for eigen in Eigens:
             coeff *= eigen
-        return coeff
+        if alpha == 1:
+            u_ex = real(coeff)
+        elif alpha == 1j:
+            u_ex = imag(coeff)
+        else:
+            raise ValueError("The alpha should be either 1 or 1j.")
+    return u_ex

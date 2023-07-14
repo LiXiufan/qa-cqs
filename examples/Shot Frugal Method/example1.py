@@ -31,7 +31,7 @@ from numpy import array, linalg
 from numpy import log2, log10
 from numpy import sqrt, kron, transpose, conj, real, imag, append
 from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculator import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, \
+from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, \
     verify_loss_function
 from cqs_module.expansion import expand_ansatz_tree
 from utils import write_running_data

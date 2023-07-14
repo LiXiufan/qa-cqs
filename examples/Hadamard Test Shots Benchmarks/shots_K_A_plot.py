@@ -28,10 +28,10 @@
 
 
 from hardware.Qibo.qibo_access import Hadamard_test
-from cqs_module.calculator import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
+from cqs_module.calculation import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
 from numpy import kron, conj, transpose, log10, sqrt, linalg, random
 from generator import CoeffMatrix
-from cqs_module.calculator import get_unitary, calculate_Q_r_by_Hadamrd_test
+from cqs_module.calculation import get_unitary, calculate_Q_r_by_Hadamrd_test
 
 import matplotlib.pyplot as plt
 
@@ -73,24 +73,24 @@ def plot_shots_and_K_A(start_K_A, end_K_A, error_bound):
             ansatz_tree = [[['I' for _ in range(qubit_number)]]]
 
             for i in range(4):
-                sam_mtd = sampling_methods[i]
+                sam_backend = sampling_methods[i]
 
                 # Uniform Sampling in [0, 2]
-                if sam_mtd == 'Uniform Sampling in [0, 2]':
+                if sam_backend == 'Uniform Sampling in [0, 2]':
                     coeffs = [(random.rand() * 2) for _ in range(K_A)]
 
                 # Uniform Sampling in [-1, 1]
-                elif sam_mtd == 'Uniform Sampling in [-1, 1]':
+                elif sam_backend == 'Uniform Sampling in [-1, 1]':
                     coeffs = [(random.rand() * 2 - 1) for _ in range(K_A)]
 
                 # Binary Sampling from {-1, 1}
-                elif sam_mtd == 'Binary Sampling from {-1, 1}':
+                elif sam_backend == 'Binary Sampling from {-1, 1}':
                     coeffs = [1 for _ in range(int(K_A / 2))] + [-1 for _ in range(int(K_A / 2))]
                     if len(coeffs) != K_A:
                         coeffs += [random.choice([-1, 1])]
 
                 # Normal Sampling with u =0, sigma = 2
-                elif sam_mtd == 'Normal Sampling with u =0, sigma = 2':
+                elif sam_backend == 'Normal Sampling with u =0, sigma = 2':
                     coeffs = random.normal(0, 2, K_A)
 
                 else:
@@ -101,15 +101,15 @@ def plot_shots_and_K_A(start_K_A, end_K_A, error_bound):
 
                 # print("Number of Decomposition Terms:", K_A)
                 # print("Experiment Data, Decomposed Unitaries:", unitaries)
-                # print("Experiment Data, " + sam_mtd + ' Coefficients :', coeffs)
+                # print("Experiment Data, " + sam_backend + ' Coefficients :', coeffs)
                 # print()
 
-                Q_exp, r_exp = calculate_Q_r_by_Hadamrd_test(B, ansatz_tree, mtd='Matrix', shots_power=4)
+                Q_exp, r_exp = calculate_Q_r_by_Hadamrd_test(B, ansatz_tree, backend='Matrix', shots_power=4)
                 for x in range(6, 100):
                     Q_error_each_shot =[]
                     r_error_each_shot = []
                     for j in range(shot_sample):
-                        Q, r = calculate_Q_r_by_Hadamrd_test(B, ansatz_tree, mtd='Hadamard', shots_power=x/3)
+                        Q, r = calculate_Q_r_by_Hadamrd_test(B, ansatz_tree, backend='Hadamard', shots_power=x/3)
                         Q_error = linalg.norm(Q - Q_exp)
                         r_error = linalg.norm(r - r_exp)
                         Q_error_each_shot.append(Q_error)
@@ -140,13 +140,13 @@ data_ave = {K_A: [sum(data_plot[K_A][j]) / len(data_plot[K_A][j]) for j in range
 
 
 for j in range(4):
-    smp_mtd = sampling_methods[j]
+    smp_backend = sampling_methods[j]
     clr = COLORS[j]
     x_ = list(data_plot.keys())
     y_ = [log10(data_ave[K_A][j]) for K_A in x_]
     error_bar = [sqrt(sum([(log10(data_plot[x_[x]][j][k]) - y_[x_[x] - 1]) ** 2 for k in range(K_A_sample)]) / K_A_sample) for x in range(len(x_))]
 
-    plt.plot(x_, y_, '-', color=clr, label=smp_mtd)
+    plt.plot(x_, y_, '-', color=clr, label=smp_backend)
     plt.errorbar(x_, y_, error_bar, ecolor='r', elinewidth=2, capsize=10, fmt='o', color='k')
     plt.fill_between(x_, [y_[i] - error_bar[i] for i in range(len(x_))],
                      [y_[i] + error_bar[i] for i in range(len(x_))],

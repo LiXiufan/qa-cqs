@@ -1,7 +1,7 @@
 from cqs_module.expansion import expand_ansatz_tree
 from generator import CoeffMatrix
 from cqs_module.expansion import optimize_with_stochastic_descend
-from cqs_module.calculator import verify_loss_function
+from cqs_module.calculation import verify_loss_function
 from numpy import array, log2, linalg
 
 import matplotlib.pyplot as plt

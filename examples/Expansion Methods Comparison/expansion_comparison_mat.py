@@ -29,7 +29,8 @@ from numpy import array, linalg
 from numpy import log2, log10
 from numpy import sqrt, kron, transpose, conj, real, imag, append
 from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculator import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, verify_loss_function
+from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, \
+    verify_loss_function
 from cqs_module.expansion import expand_ansatz_tree
 from utils import write_running_data
 
@@ -51,9 +52,9 @@ shots_power = 5
 # total_tree_depth = 50
 error = 0.01
 
-# mtd = 'Matrix'
-# mtd = 'Hadamard'
-mtd = 'Eigens'
+# backend = 'Matrix'
+# backend = 'Hadamard'
+backend = 'Eigens'
 
 # Initialize the coefficient matrix
 A = CoeffMatrix(number_of_terms, dim, qubit_number)
@@ -108,7 +109,7 @@ B = sum([abs(coeff) for coeff in coeffs])
 #     Itr.append(itr)
 #     eg = "Regression loss of depth" + str(itr)
 #     # Performing Hadamard test to calculate Q and r
-#     Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, mtd=mtd, shots_power=shots_power)
+#     Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend, shots_power=shots_power)
 #
 #     # Estimate the property of Q and r
 #     # print('B:', B)
@@ -126,7 +127,7 @@ B = sum([abs(coeff) for coeff in coeffs])
 #     # print('Tree Depth:', itr, "test:", test)
 #
 #     # loss = real(calculate_loss_function(A, vars, ansatz_tree, shots=shots))
-#     loss = real(calculate_loss_function(A, vars, ansatz_tree, mtd=mtd, shots_power=shots_power))
+#     loss = real(calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_power=shots_power))
 #     print('Tree Depth:', itr, "Loss:", loss)
 #     loss_list.append(loss)
 #
@@ -141,7 +142,7 @@ B = sum([abs(coeff) for coeff in coeffs])
 #         print(f"Find the optimal solution of combination parameters \n {vars} \n and the Ansatz tree structure \n {ansatz_tree}")
 #
 #     else:
-#         anstaz_tree = expand_ansatz_tree(A, vars, ansatz_tree, mtd=mtd, draw_tree=False, shots_power=shots_power)
+#         anstaz_tree = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend, draw_tree=False, shots_power=shots_power)
 
 
 ansatz_tree = [[['I' for _ in range(qubit_number)]]]
@@ -159,7 +160,7 @@ for i in range(5):
     Itr.append(itr)
     # eg = "Regression loss of depth" + str(itr)
     # Performing Hadamard test to calculate Q and r
-    # Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, mtd=mtd, shots_power=shots_power)
+    # Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend, shots_power=shots_power)
 
     # Estimate the property of Q and r
     # print('B:', B)
@@ -176,7 +177,7 @@ for i in range(5):
     # loss = calculate_loss_function(A, vars, ansatz_tree, shots=shots)
     # print('Tree Depth:', itr, "test:", test)
 
-    # loss = real(calculate_loss_function(A, vars, ansatz_tree, mtd=mtd, shots_power=shots_power))
+    # loss = real(calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_power=shots_power))
     # print('Tree Depth:', itr, "Loss:", loss)
     # loss_list.append(loss)
 
@@ -201,87 +202,8 @@ for i in range(5):
         for i in range(depth - 1, -1, -1):
             Unis[i] = term % 3
 
-
-
-
-
-        # Unis = []
-        # for i in range(depth, 0, -1):
-        #     if term <= 3 ** i:
-        #         Unis.append(0)
-        #     else:
-        #         Unis.append(term - 3 ** i)
-
-
-
         ansatz_tree.append(unitaries[term])
-
-    # If the loss is in our error range, stop the iteration;
-    # if abs(loss) <= error:
-    #     print(f"Find the optimal solution of combination parameters \n {vars} \n and the Ansatz tree structure \n {ansatz_tree}")
-    #     # break
-    #
-    # else:
-    #     if itr + 1 > layer:
-    #         depth += 1
-    #         layer += number_of_terms ** depth
-    #         first_node = []
-    #         for d in range(depth):
-    #             first_node += unitaries[0]
-    #         ansatz_tree.append(first_node)
-    #
-    #     else:
-    #         current_node = ansatz_tree[-1]
-    #         term = itr - (layer - number_of_terms ** depth)
-    #         ansatz_tree.append(unitaries[term])
-
     print(ansatz_tree)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
-# plt.title("CQS: Loss - Depth")
-#
-# plt.plot(Itr, [0 for _ in Itr], 'b--',
-#          Itr, loss_list, 'r-')
-#
-# plt.xlabel("Depth")
-# plt.ylabel("Loss")
-# plt.show()
-
-# plt.title("Loss - Depth")
-# plt.plot(Itr, [0 for _ in range(total_tree_depth)], 'r--', Itr, loss_list, 'ro')
-# plt.xlabel("Depth of Ansatz Tree")
-# plt.ylabel("Loss")
-# plt.show()
 
 
 
@@ -334,8 +256,6 @@ for i in range(5):
 #
 #
 # Q, r = calculate_Q_and_r(R, I, q)
-
-
 
 
 # print('Hadamard test result:', R)

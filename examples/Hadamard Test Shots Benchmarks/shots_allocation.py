@@ -29,7 +29,7 @@ from numpy import array, linalg
 from numpy import log2, log10
 from numpy import sqrt, kron, transpose, conj, real, imag, append
 from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculator import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, verify_loss_function
+from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, verify_loss_function
 from cqs_module.expansion import expand_ansatz_tree
 from utils import write_running_data
 from qiskit_ibm_provider import IBMProvider
@@ -57,9 +57,9 @@ shots_total_budget = 6996
 # total_tree_depth = 50
 error = 0.1
 
-# mtd = 'Matrix'
-mtd = 'Hadamard'
-# mtd = 'Eigens'
+# backend = 'Matrix'
+backend = 'Hadamard'
+# backend = 'Eigens'
 
 # Initialize the coefficient matrix
 A = CoeffMatrix(number_of_terms, dim, qubit_number)
@@ -135,9 +135,9 @@ def Shot_Frugal_Main():
         Itr.append(itr)
         eg = "Regression loss of depth" + str(itr)
         # Performing Hadamard test to calculate Q and r
-        mtd = 'Hadamard'
-        # mtd = 'Eigens'
-        Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, mtd=mtd, shots_budget=Q_r_budget, frugal=True)
+        backend = 'Hadamard'
+        # backend = 'Eigens'
+        Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend, shots_budget=Q_r_budget, frugal=True)
 
         # Estimate the property of Q and r
         # print('B:', B)
@@ -155,9 +155,9 @@ def Shot_Frugal_Main():
         # print('Tree Depth:', itr, "test:", test)
 
         # loss = real(calculate_loss_function(A, vars, ansatz_tree, shots=shots))
-        mtd = 'Hadamard'
-        # mtd = 'Eigens'
-        loss = abs(real(calculate_loss_function(A, vars, ansatz_tree, mtd=mtd, shots_budget=loss_budget, frugal=True)))
+        backend = 'Hadamard'
+        # backend = 'Eigens'
+        loss = abs(real(calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_budget=loss_budget, frugal=True)))
         print('Tree Depth:', itr, "Loss:", loss)
         loss_list_hadamard_frugal.append(loss)
 
@@ -173,8 +173,8 @@ def Shot_Frugal_Main():
         #     break
         #
         # else:
-        #     anstaz_tree = expand_ansatz_tree(A, vars, ansatz_tree, mtd=mtd, draw_tree=False, shots_power=shots_power)
-        mtd = 'Hadamard'
+        #     anstaz_tree = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend, draw_tree=False, shots_power=shots_power)
+        backend = 'Hadamard'
         # mtd = 'Eigens'
         anstaz_tree = expand_ansatz_tree(A, vars, ansatz_tree, mtd=mtd, draw_tree=False, shots_budget=gradient_budget, frugal=True)
     return Itr, loss_list_hadamard_frugal
@@ -311,15 +311,15 @@ def Matrix_Multiplication_Main():
 
     return Itr, loss_list_matrix
 
-# Itr, loss_list_hadamard_frugal = Shot_Frugal_Main()
-Itr, loss_list_hadamard = Shot_Not_Frugal_Main()
+Itr, loss_list_hadamard_frugal = Shot_Frugal_Main()
+# Itr, loss_list_hadamard = Shot_Not_Frugal_Main()
 _, loss_list_matrix = Matrix_Multiplication_Main()
 
 plt.title("CQS: Loss - Depth")
 
 plt.plot(Itr, [0 for _ in Itr], 'b--')
-# plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
-plt.plot(Itr, loss_list_hadamard, '-', color='blue', linewidth=2.5, label='Loss Function by Hadamard Tests')
+plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
+# plt.plot(Itr, loss_list_hadamard, '-', color='blue', linewidth=2.5, label='Loss Function by Hadamard Tests')
 plt.plot(Itr, loss_list_matrix, '-', color='red', linewidth=2.5, label='Loss Function by Matrix Multiplication')
 
 plt.legend()
