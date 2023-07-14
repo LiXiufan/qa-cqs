@@ -28,10 +28,10 @@
 
 
 from hardware.Qibo.qibo_access import Hadamard_test
-from cqs_module.calculator import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
+from cqs_module.calculation import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
 from numpy import kron, conj, transpose, log10, sqrt, linalg, random
 from generator import CoeffMatrix
-from cqs_module.calculator import get_unitary, calculate_Q_r_by_Hadamrd_test
+from cqs_module.calculation import get_unitary, calculate_Q_r_by_Hadamrd_test
 
 import matplotlib.pyplot as plt
 
@@ -184,7 +184,7 @@ def plot_shot_and_error(TBT, NAME, COLORS, ansatz_tree, begin_shots, end_shots):
 
     for i in range(len(TBT)):
         MTX = TBT[i]
-        Q_exp, r_exp = calculate_Q_r_by_Hadamrd_test(MTX, ansatz_tree, mtd='Matrix', shots_power=4)
+        Q_exp, r_exp = calculate_Q_r_by_Hadamrd_test(MTX, ansatz_tree, backend='Matrix', shots_power=4)
         name = NAME[i]
         color = COLORS[i]
 
@@ -215,7 +215,7 @@ def plot_shot_and_error(TBT, NAME, COLORS, ansatz_tree, begin_shots, end_shots):
                 # real_obs = Hadamard_test(U, shots=shot)
                 # imag_obs = Hadamard_test(U, alpha=1j, shots=shot)
                 # exp_obs = real_obs - imag_obs * 1j
-                Q, r = calculate_Q_r_by_Hadamrd_test(MTX, ansatz_tree, mtd='Hadamard', shots_power=x)
+                Q, r = calculate_Q_r_by_Hadamrd_test(MTX, ansatz_tree, backend='Hadamard', shots_power=x)
                 Q_error = linalg.norm(Q - Q_exp)
                 r_error = linalg.norm(r - r_exp)
 
@@ -337,9 +337,9 @@ number_of_terms = 10
 # total_tree_depth = 50
 error = 0.1
 
-# mtd = 'Matrix'
-mtd = 'Hadamard'
-# mtd = 'Eigens'
+# backend = 'Matrix'
+backend = 'Hadamard'
+# backend = 'Eigens'
 
 # Initialize the coefficient matrix
 A = CoeffMatrix(number_of_terms, dim, qubit_number)

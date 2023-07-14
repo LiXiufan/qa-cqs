@@ -21,7 +21,7 @@
 # !/usr/bin/env python3
 
 """
-    Access to the IonQ Simulator and the Quantum Hardware.
+    Access to the Qibo Simulator and the Quantum Hardware.
 """
 
 from qibo.models import Circuit
@@ -72,42 +72,9 @@ def Hadamard_test(U, alpha=1, shots=1024):
         p0 = 1
         p1 = 0
     else:
-
-        # if result.frequencies()['0'] > result.frequencies()['1']:
-        #     p0 = 1
-        #     p1 = 0
-        # else:
-        #     p0 = 0
-        #     p1 = 1
-        # p0 = result.frequencies()['0'] / shots
-        # p1 = result.frequencies()['1'] / shots
-        # if result.frequencies()['0'] == 1 or result.frequencies()['0'] == 2:
-        #     p0 = 0
-        #     p1 = 1
-        # elif result.frequencies()['1'] == 1 or result.frequencies()['1'] == 2:
-        #     p1 = 0
-        #     p0 = 1
-        # else:
-        p0 = 0.5
-        p1 = 0.5
+        # p0 = 0.5
+        # p1 = 0.5
+        p0 = result.frequencies()['0'] / shots
+        p1 = result.frequencies()['1'] / shots
     real_exp = p0 - p1
-    # if linalg.norm(real_exp - 0) <= 0.6:
-    #     real_exp = 0
-    # print('Real part of the expectation value is:', real_exp)
-
-    # The simulator provides the ideal probabilities from the circuit, and the provider
-    # creates “counts” by randomly sampling from these probabilities. The raw (“true”)
-    # probabilities are also accessible by calling get_probabilities():
-    # if '0' not in job.get_probabilities().keys():
-    #     p0 = 0
-    #     p1 = 1
-    # elif '1' not in job.get_probabilities().keys():
-    #     p0 = 1
-    #     p1 = 0
-    # else:
-    #     p0 = job.get_probabilities()['0']
-    #     p1 = job.get_probabilities()['1']
-    # real_exp = p0 - p1
-    # print('Real to calculate', real_exp)
-
     return real_exp

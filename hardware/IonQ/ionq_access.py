@@ -29,19 +29,27 @@ from qiskit_ionq import IonQProvider
 
 
 def Hadamard_test(U, alpha=1, shots=1024):
+    # C = []
+    # for u in U:
     # Initialize settings
-    # U = [[], [], ...] := [[column1], [column2], ...]
+    # Instead of a single unitary, we input a list of unitaries.
+    # U = [U1, U2, U3] = [[[], [], ...], [[], [], ...], [[], [], ...], [[], [], ...]]
+    # Each Ui = [[], [], ...] := [[column1], [column2], ...]
+
     width = len(U[0])
     ancilla = 1
 
     # Check the backends
     # We need a token created by IonQ's API.
-    provider = IonQProvider('DIgW5efHJ3wMuZV1inBHUWQHUbrq8II7')
     # print(provider.backends())
     # Use the simulator backend as examinations.
-    simulator_backend = provider.get_backend("ionq_simulator")
     # When all tests are done, quantum hardware will be taken into consideration
     # simulator_backend = provider.get_backend("ionq_qpu")
+
+    provider = IonQProvider('pUhwyKCHRYAvWUChFqwTApQwow4mS2h7')
+    # simulator_backend = provider.get_backend("ionq_qpu.aria-1")
+    # simulator_backend = provider.get_backend("ionq_qpu.harmony")
+    simulator_backend = provider.get_backend("ionq_simulator")
 
     # Create gates for the unitary
     # U = [U1, U2], U1 operates before U2, --> |psi> = U2 U1 |0>
@@ -79,6 +87,10 @@ def Hadamard_test(U, alpha=1, shots=1024):
     # Print the counts
     # print(job.get_counts())
 
+    # result = transpile(Hadamard_circuit, backend=simulator_backend, optimization_level=3)
+    # job = simulator_backend.run(result, shots=shots)
+    #
+
     # Use sampling outcomes to approximate the probabilities and the real part of the expectation value
     # if '0' not in job.get_counts().keys():
     #     p0 = 0
@@ -95,16 +107,17 @@ def Hadamard_test(U, alpha=1, shots=1024):
     # The simulator provides the ideal probabilities from the circuit, and the provider
     # creates “counts” by randomly sampling from these probabilities. The raw (“true”)
     # probabilities are also accessible by calling get_probabilities():
-    if '0' not in job.get_probabilities().keys():
-        p0 = 0
-        p1 = 1
-    elif '1' not in job.get_probabilities().keys():
-        p0 = 1
-        p1 = 0
-    else:
-        p0 = job.get_probabilities()['0']
-        p1 = job.get_probabilities()['1']
-    real_exp = p0 - p1
-    # print('Real to calculate', real_exp)
 
-    return real_exp
+    # if '0' not in job.get_probabilities().keys():
+    #     p0 = 0
+    #     p1 = 1
+    # elif '1' not in job.get_probabilities().keys():
+    #     p0 = 1
+    #     p1 = 0
+    # else:
+    #     p0 = job.get_probabilities()['0']
+    #     p1 = job.get_probabilities()['1']
+    # real_exp = p0 - p1
+    # C.append(Hadamard_circuit)
+
+    return job.job_id()
