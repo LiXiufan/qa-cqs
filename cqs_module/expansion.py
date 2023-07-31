@@ -35,12 +35,16 @@ from numpy import random, linalg, sqrt, kron
 from numpy import real, conj, transpose
 from utils import draw_ansatz_tree
 from qiskit_ionq import IonQProvider
+from qiskit_braket_provider import AWSBraketProvider
 
 # unitaries = [['X', 'Z'], ['Z', 'X'], ['I', 'Y']]
 # alphas = [1.6317321653264614, 0.2249104575899552, 1.7897631234464821]
 
+DEVICE = 'SV1'
+# DEVICE = 'Aria 1'
 
-def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shots_budget=1024, frugal=False):
+
+def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shots_budget=1024, frugal=False,  tasks_num = 0, shots_num = 0):
     if backend is None:
         backend = 'eigens'
     A_coeffs = A.get_coeff()
@@ -81,7 +85,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
     gradient_overlaps = [0 for _ in range(len(child_space))]
 
     for i, child_node in enumerate(child_space):
-        if backend == 'ionq':
+        if backend == 'ionq' or backend == 'braket':
             Job_ids_1_R = []
             Job_ids_1_I = []
             Job_ids_2_R = []
@@ -92,30 +96,34 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                     for l in range(A_terms_number):
                         shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                         u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
-                        # shots = 100
-                        jobid_R = Hadamard_test(u, backend=backend, alpha=1, shots=shots)
+                        shots = 20
+                        jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_1_R.append(jobid_R)
-                        jobid_I = Hadamard_test(u, backend=backend, alpha=1j, shots=shots)
+                        jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_1_I.append(jobid_I)
 
             for j in range(A_terms_number):
                 shots = P_Child_Nodes_Term_2[j]
                 u = U_list_dagger(child_node) + A_unitaries[j]
-                # shots = 100
-                jobid_R = Hadamard_test(u, backend=backend, alpha=1, shots=shots)
+                shots = 20
+                jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_2_R.append(jobid_R)
-                jobid_I = Hadamard_test(u, backend=backend, alpha=1j, shots=shots)
+                jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_2_I.append(jobid_I)
 
-            provider = IonQProvider('pUhwyKCHRYAvWUChFqwTApQwow4mS2h7')
-            # simulator_backend = provider.get_backend("ionq_qpu.harmony")
-            # simulator_backend = provider.get_backend("ionq_qpu.aria-1")
-            simulator_backend = provider.get_backend("ionq_simulator")
+            if backend == 'ionq':
+                provider = IonQProvider('pUhwyKCHRYAvWUChFqwTApQwow4mS2h7')
+                # simulator_backend = provider.get_backend("ionq_qpu.harmony")
+                # simulator_backend = provider.get_backend("ionq_qpu.aria-1")
+                simulator_backend = provider.get_backend("ionq_simulator")
+            else:
+                provider = AWSBraketProvider()
+                simulator_backend = provider.get_backend("DEVICE")
 
-            exp_1_R = calculate_statistics(simulator_backend.retrieve_jobs(Job_ids_1_R))
-            exp_1_I = calculate_statistics(simulator_backend.retrieve_jobs(Job_ids_1_I))
-            exp_2_R = calculate_statistics(simulator_backend.retrieve_jobs(Job_ids_2_R))
-            exp_2_I = calculate_statistics(simulator_backend.retrieve_jobs(Job_ids_2_I))
+            exp_1_R = calculate_statistics(simulator_backend, Job_ids_1_R)
+            exp_1_I = calculate_statistics(simulator_backend, Job_ids_1_I)
+            exp_2_R = calculate_statistics(simulator_backend, Job_ids_2_R)
+            exp_2_I = calculate_statistics(simulator_backend, Job_ids_2_I)
 
             term_1 = 0
             for j in range(tree_depth):
@@ -136,7 +144,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
             for j in range(A_terms_number):
                 beta_j = A_coeffs[j]
                 inner_product_real = exp_2_R[j]
-                inner_product_imag = exp_2_R[j]
+                inner_product_imag = exp_2_I[j]
                 inner_product = inner_product_real - inner_product_imag * 1j
                 term_2 += beta_j * inner_product
 
@@ -151,10 +159,10 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                         beta_k = A_coeffs[k]
                         beta_l = A_coeffs[l]
                         shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
-                        # shots = 100
+                        shots = 20
                         u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
-                        inner_product_real = Hadamard_test(u, backend=backend, alpha=1, shots=shots)
-                        inner_product_imag = Hadamard_test(u, backend=backend, alpha=1j, shots=shots)
+                        inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
+                        inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product = inner_product_real - inner_product_imag * 1j
                         term_1_1 += beta_k * beta_l * inner_product
                 term_1 += alpha * term_1_1
@@ -163,10 +171,10 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
             for j in range(A_terms_number):
                 beta_j = A_coeffs[j]
                 shots = P_Child_Nodes_Term_2[j]
-                # shots = 100
+                shots = 20
                 u = U_list_dagger(child_node) + A_unitaries[j]
-                inner_product_real = Hadamard_test(u, backend=backend, alpha=1, shots=shots)
-                inner_product_imag = Hadamard_test(u, backend=backend, alpha=1j, shots=shots)
+                inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
+                inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product = inner_product_real - inner_product_imag * 1j
                 term_2 += beta_j * inner_product
 
@@ -189,7 +197,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
     ansatz_tree.append(child_node_opt)
     if draw_tree is True:
         draw_ansatz_tree(A_terms_number, tree_depth, 'Pending')
-    return ansatz_tree
+    return ansatz_tree, tasks_num, shots_num
 
 
 # def optimize_with_stochastic_descend(A, N):

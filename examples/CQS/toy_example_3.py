@@ -22,6 +22,8 @@
 
 """
     Execution of the program.
+
+    Aria 1
 """
 
 from generator import CoeffMatrix
@@ -58,7 +60,7 @@ A = CoeffMatrix(number_of_terms, dim, qubit_number)
 
 # Generate A with the following way
 coeffs = [1, 0.5, 0.2]
-unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'Z', 'I', 'I']]]
+unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'I', 'I', 'Z', 'I']], [['X', 'I', 'I', 'I', 'Z']]]
 # Number of Hadamard tests in total: 636
 # So the total shot budget is: 636 * 11 =  6996
 
@@ -140,7 +142,7 @@ def main(backend='eigens', frugal=True):
     return Itr, Loss, TASKS, SHOTS
 
 # Itr, loss_list_hadamard_frugal = main(backend='braket', frugal=True)
-Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='qibo_noisy', frugal=False)
+Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='braket', frugal=False)
 
 
 # Calculate the number of shots and tasks, and estimate the cost.

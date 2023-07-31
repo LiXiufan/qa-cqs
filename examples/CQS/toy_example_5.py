@@ -22,6 +22,8 @@
 
 """
     Execution of the program.
+
+    Lucy
 """
 
 from generator import CoeffMatrix
@@ -58,7 +60,7 @@ A = CoeffMatrix(number_of_terms, dim, qubit_number)
 
 # Generate A with the following way
 coeffs = [1, 0.5, 0.2]
-unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'Z', 'I', 'I']]]
+unitaries = [[['I', 'I', 'I', 'I', 'I']], [['I', 'Z', 'I', 'I', 'Z']], [['X', 'I', 'X', 'Z', 'I']]]
 # Number of Hadamard tests in total: 636
 # So the total shot budget is: 636 * 11 =  6996
 
@@ -96,12 +98,12 @@ for itr in range(1, ITR + 1):
     # Shot budget to calculate the gradient overlaps
     gradient_budget = int(0.2 * shot_budget)
     gradient_budgets.append(gradient_budget)
+
+
 #
 # print("Shot budget for estimating Q and r:", Q_r_budgets)
 # print("Shot budget for estimating Loss:", loss_budgets)
 # print("Shot budget for estimating gradient overlaps:", gradient_budgets)
-
-
 
 
 # 3. Define the main function
@@ -119,7 +121,9 @@ def main(backend='eigens', frugal=True):
         print("Itr:", itr, " Ansatz tree is:", ansatz_tree)
         Itr.append(itr)
         # Performing Hadamard test to calculate Q and r
-        Q, r, TASKS, SHOTS = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend, shots_budget=Q_r_budgets[itr - 1], frugal=frugal, tasks_num = TASKS, shots_num = SHOTS)
+        Q, r, TASKS, SHOTS = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend,
+                                                           shots_budget=Q_r_budgets[itr - 1], frugal=frugal,
+                                                           tasks_num=TASKS, shots_num=SHOTS)
         print("\n")
         print("Itr:", itr, " Matrix Q is:\n", Q)
         print("Itr:", itr, " Vector r is:\n", r)
@@ -132,16 +136,18 @@ def main(backend='eigens', frugal=True):
 
         # Calculate the regression loss function to test if it is in the error range
         loss, TASKS, SHOTS = abs(real(
-            calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_budget=loss_budgets[itr - 1], frugal=frugal, tasks_num = TASKS, shots_num = SHOTS)))
+            calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_budget=loss_budgets[itr - 1],
+                                    frugal=frugal, tasks_num=TASKS, shots_num=SHOTS)))
         print('Itr:', itr, "Loss:", loss)
         Loss.append(loss)
         ansatz_tree, TASKS, SHOTS = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend, draw_tree=False,
-                                         shots_budget=gradient_budgets[itr - 1], frugal=frugal, tasks_num = TASKS, shots_num = SHOTS)
+                                                       shots_budget=gradient_budgets[itr - 1], frugal=frugal,
+                                                       tasks_num=TASKS, shots_num=SHOTS)
     return Itr, Loss, TASKS, SHOTS
 
-# Itr, loss_list_hadamard_frugal = main(backend='braket', frugal=True)
-Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='qibo_noisy', frugal=False)
 
+# Itr, loss_list_hadamard_frugal = main(backend='braket', frugal=True)
+Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='braket', frugal=False)
 
 # Calculate the number of shots and tasks, and estimate the cost.
 # $0.3 / task, $0.03 / shot for IonQ Aria.
@@ -152,15 +158,15 @@ print("The estimated total number of tasks is: " + str(TASKS) + ".")
 print("The estimated total number of SHOTS is: " + str(SHOTS) + ".")
 print("The estimated total cost for Execution on IonQ Aria will be: $" + str(COST) + ".")
 
-
 # Itr, loss_list_hadamard_not_frugal = main(backend='qibo', frugal=False)
 # Itr, loss_list_eigens = main(backend='eigens', frugal=False)
 
-ax = plt.subplot() # Defines ax variable by creating an empty plot
+ax = plt.subplot()  # Defines ax variable by creating an empty plot
 plt.title("CQS: Loss - Depth", fontsize=20)
 plt.grid()
 plt.plot(Itr, [0 for _ in Itr], 'b:')
-plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
+plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5,
+         label='Loss Function by Hadamard Tests with frugal method')
 # plt.plot(Itr, loss_list_hadamard_not_frugal, '-', color='blue', linewidth=2.5, label='Loss Function by Hadamard Tests')
 # plt.plot(Itr, loss_list_eigens, '-', color='red', linewidth=2.5, label='Loss Function by Matrix Multiplication')
 
@@ -176,7 +182,7 @@ plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Functi
 #     label.set_fontproperties(font_prop)
 #     label.set_fontsize(15) # Size here overrides font_prop
 
-lgd = plt.legend() # NB different 'prop' argument for legend
+lgd = plt.legend()  # NB different 'prop' argument for legend
 # lgd = plt.legend(fontsize=20) # NB different 'prop' argument for legend
 
 lgd.set_title("Legend")
@@ -184,26 +190,6 @@ plt.xticks(Itr, Itr)
 plt.xlabel("Depth", fontsize=20)
 plt.ylabel("Loss", fontsize=20)
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ########################################################################################################################
 #                                           CODES OF OLD VERSIONS
@@ -218,14 +204,11 @@ plt.show()
 # unitaries = A.get_unitary()
 
 
-
-
 # Analytical solution, we can get the matrix form of A
 # mat = A.get_matrix()
 # print('The coefficient matrix is:/n', mat)
 # analy_x = linalg.inv(mat) @ b.reshape(dim, 1)
 # print('The analytical solution of the linear systems of equations is:', analy_x)
-
 
 
 # Choices of coefficients and unitaries
@@ -237,7 +220,6 @@ plt.show()
 # coeffs = [1, 0.1, -0.5, 0.1]
 # unitaries = [[['I', 'I', 'I', 'I', 'I']], [['I', 'X', 'I', 'X', 'I']], [['X', 'Z', 'I', 'I', 'Z']], [['Y', 'I', 'Z', 'Y', 'I']]]
 # unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'Z', 'I', 'I']]]
-
 
 
 #
@@ -285,8 +267,6 @@ plt.show()
 #
 #
 # Q, r = calculate_Q_and_r(R, I, q)
-
-
 
 
 # print('Hadamard test result:', R)

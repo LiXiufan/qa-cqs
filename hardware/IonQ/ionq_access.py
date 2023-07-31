@@ -62,8 +62,10 @@ def Hadamard_test(U, alpha=1, shots=1024):
                 U_in_circuit.y(i)
             elif gate == 'Z':
                 U_in_circuit.z(i)
-            # elif gate == 'I':
+            elif gate == 'I':
             #     U_in_circuit.i(i)
+                U_in_circuit.h(i)
+                U_in_circuit.h(i)
             elif gate == 'H':
                 U_in_circuit.h(i)
     U_gate = U_in_circuit.to_gate()
@@ -80,7 +82,9 @@ def Hadamard_test(U, alpha=1, shots=1024):
     Hadamard_circuit.measure([0], [0])
 
     # Transpile the circuit for Hadamard test
-    result = transpile(Hadamard_circuit, backend=simulator_backend, optimization_level=3)
+    # result = transpile(Hadamard_circuit, backend=simulator_backend, optimization_level=3)
+    result = transpile(Hadamard_circuit, backend=simulator_backend)
+
     # print(result)
     # Run the circuit on IonQ's platform:
     job = simulator_backend.run(result, shots=shots)
