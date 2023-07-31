@@ -65,6 +65,7 @@ def Hadamard_test(U, alpha=1, shots=1024):
     # print(job.get_counts())
 
     # Use sampling outcomes to approximate the probabilities and the real part of the expectation value
+    print("The sampling result is:", result.frequencies())
     if '0' not in result.frequencies().keys():
         p0 = 0
         p1 = 1
@@ -75,6 +76,26 @@ def Hadamard_test(U, alpha=1, shots=1024):
         # p0 = 0.5
         # p1 = 0.5
         p0 = result.frequencies()['0'] / shots
+        print("The sampling probability of getting 0 is:", p0)
         p1 = result.frequencies()['1'] / shots
+        print("The sampling probability of getting 1 is:", p1)
+
+        if p0 < 0.2:
+            p0 = 0
+            p1 = 1
+            print("p0 < 0.2: set p0 = 0 and p1 = 1.")
+            print("Expectation value is -1.")
+        else:
+            if p1 < 0.2:
+                p0 = 1
+                p1 = 0
+                print("p0 > 0.8: set p0 = 1 and p1 = 0.")
+                print("Expectation value is 1.")
+            else:
+                p0 = 0.5
+                p1 = 0.5
+                print("0.2 <= p0 <= 0.8: set p0 = 0.5 and p1 = 0.5.")
+                print("Expectation value is 0.")
+        print()
     real_exp = p0 - p1
     return real_exp

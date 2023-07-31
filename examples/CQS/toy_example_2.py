@@ -22,6 +22,8 @@
 
 """
     Execution of the program.
+
+    Aria 1
 """
 
 from generator import CoeffMatrix
@@ -140,7 +142,7 @@ def main(backend='eigens', frugal=True):
     return Itr, Loss, TASKS, SHOTS
 
 # Itr, loss_list_hadamard_frugal = main(backend='braket', frugal=True)
-Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='qibo_noisy', frugal=False)
+Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='qibo', frugal=False)
 
 
 # Calculate the number of shots and tasks, and estimate the cost.
