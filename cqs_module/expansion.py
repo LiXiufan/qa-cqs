@@ -40,11 +40,12 @@ from qiskit_braket_provider import AWSBraketProvider
 # unitaries = [['X', 'Z'], ['Z', 'X'], ['I', 'Y']]
 # alphas = [1.6317321653264614, 0.2249104575899552, 1.7897631234464821]
 
-DEVICE = 'SV1'
-# DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'SV1'
+BRAKET_DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'Harmony'
 
 
-def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shots_budget=1024, frugal=False,  tasks_num = 0, shots_num = 0):
+def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shots_budget=1024, frugal=False,  tasks_num = 0, shots_num = 0, file_name='message.txt'):
     if backend is None:
         backend = 'eigens'
     A_coeffs = A.get_coeff()
@@ -97,6 +98,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                         shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                         u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
                         shots = 20
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_1_R.append(jobid_R)
                         jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
@@ -106,6 +110,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                 shots = P_Child_Nodes_Term_2[j]
                 u = U_list_dagger(child_node) + A_unitaries[j]
                 shots = 20
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_2_R.append(jobid_R)
                 jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
@@ -118,7 +125,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                 simulator_backend = provider.get_backend("ionq_simulator")
             else:
                 provider = AWSBraketProvider()
-                simulator_backend = provider.get_backend("DEVICE")
+                simulator_backend = provider.get_backend(BRAKET_DEVICE)
 
             exp_1_R = calculate_statistics(simulator_backend, Job_ids_1_R)
             exp_1_I = calculate_statistics(simulator_backend, Job_ids_1_I)
@@ -161,6 +168,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                         shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                         shots = 20
                         u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product = inner_product_real - inner_product_imag * 1j
@@ -173,6 +183,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                 shots = P_Child_Nodes_Term_2[j]
                 shots = 20
                 u = U_list_dagger(child_node) + A_unitaries[j]
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product = inner_product_real - inner_product_imag * 1j
@@ -181,17 +194,25 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
         gradient_overlap = abs(2 * term_1 - 2 * term_2)
         gradient_overlaps[i] = gradient_overlap
 
-    print("")
-    print("Child space is:", child_space)
-    print("")
-    print("Gradient Overlaps are:", gradient_overlaps)
-    print("")
+
+
+    # print("")
+    # print("Child space is:", child_space)
+    # print("")
+    # print("Gradient Overlaps are:", gradient_overlaps)
+    # print("")
     # To consider the case when there are several candidates for the child node.
     max_index = [index for index, item in enumerate(gradient_overlaps) if item == max(gradient_overlaps)]
     idx = random.choice(max_index)
     child_node_opt = child_space[idx]
-    print("Choose the child node of maximum overlap:", child_node_opt)
-    print("")
+    # print("Choose the child node of maximum overlap:", child_node_opt)
+    # print("")
+    file1 = open(file_name, "a")
+    file1.writelines(["Child space is:", str(child_space), '\n'])
+    file1.writelines(["Gradient Overlaps are:", str(gradient_overlaps), '\n'])
+    file1.writelines(["Choose the child node of maximum overlap:", str(child_node_opt), '\n\n'])
+    file1.close()
+
     if draw_tree is True:
         draw_ansatz_tree(A_terms_number, tree_depth, 'Optimal', which_index=idx)
     ansatz_tree.append(child_node_opt)

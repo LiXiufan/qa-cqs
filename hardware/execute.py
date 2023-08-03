@@ -44,8 +44,12 @@ def Hadamard_test(U, backend='qibo', alpha=1, shots=1024, tasks_num = 0, shots_n
         elif backend == 'matrix':
             return Hadmard_test_matrix(U, alpha), tasks_num, shots_num
         elif backend == 'braket':
+            tasks_num += 1
+            shots_num += shots
             return Hadamard_test_braket(U, alpha, shots), tasks_num, shots_num
         elif backend == 'braket_noisy':
+            tasks_num += 1
+            shots_num += shots
             return Hadamard_test_braket_noisy(U, alpha, shots), tasks_num, shots_num
         else:
             raise ValueError("The backend should be in ['qibo', 'qibo_noisy', "
