@@ -29,9 +29,11 @@ from numpy import real, array
 from cqs_module.optimization import solve_combination_parameters
 from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
 from cqs_module.expansion import expand_ansatz_tree
+from cqs_module.verifier import get_unitary
+from numpy import linalg, log
 
 import matplotlib.pyplot as plt
-def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
+def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend, expan_mtd):
     # Use Braket SDK Cost Tracking to estimate the cost to run this example
     # from braket.tracking import Tracker
     # t = Tracker().start()
@@ -54,6 +56,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
 
     # Initialize the coefficient matrix
     A = CoeffMatrix(number_of_terms, dim, qubit_number)
+
     # print('Qubits are tagged as:', ['Q' + str(i) for i in range(A.get_width())])
 
     # Generate A with the following way
@@ -66,18 +69,27 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
     # unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
 
     A.generate(which_form='Unitaries', given_unitaries=unitaries, given_coeffs=coeffs)
+    A_mat = A.get_matrix()
+    # A_norm = linalg.norm(A_mat)
+    # print(A_norm)
+    con = linalg.norm(A_mat) * linalg.norm(linalg.inv(A_mat))
+    print("The condition number of A is:", con)
+    print('The per-measurement quantum circuit depth is at the order of magnitude of:', con * log(con) + con * log(10))
+    print("The size of bases is:", number_of_terms ** con * log(con/0.1))
     B = sum([abs(coeff) for coeff in coeffs])
     # Values on the right hand side of the equation.
-    b = array([1] + [0 for _ in range(dim - 1)])
-    if file_name not in ['cqs_exe_first_demo.txt', 'cqs_exe_second_demo.txt', 'cqs_exe_third_demo.txt', 'cqs_exe_fourth_demo.txt', 'cqs_exe_fifth_demo.txt']:
-        file1 = open(file_name, "a")
-        file1.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
-        # print('Coefficients of the terms are:', coeffs)
-        file1.writelines(['Decomposed unitaries are:', str(unitaries), '\n'])
-        # print('Decomposed unitaries are:', unitaries)
-        # print('The vector on the right hand side of the equation is:', b)
-        file1.writelines(['The vector on the right hand side of the equation is:', str(b), '\n'])
-        file1.close()
+    u_b_mat = get_unitary(u_b)
+    zeros = array([1] + [0 for _ in range(dim - 1)])
+    b_mat = u_b_mat @ zeros
+
+    file1 = open(file_name, "a")
+    file1.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
+    # print('Coefficients of the terms are:', coeffs)
+    file1.writelines(['Decomposed unitaries are:', str(unitaries), '\n'])
+    # print('Decomposed unitaries are:', unitaries)
+    # print('The vector on the right hand side of the equation is:', b)
+    file1.writelines(['The vector on the right hand side of the equation is:', str(b_mat), '\n'])
+    file1.close()
 
     # 2. Initialization
     # Total iteration
@@ -108,93 +120,46 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
 
     # 3. Define the main function
     def main(backend='eigens', frugal=True, file_name='message.txt'):
-        ansatz_tree = [[['I' for _ in range(qubit_number)]]]
-        if file_name == 'cqs_exe_first_demo.txt':
-            TASKS = 27 * 2
-            SHOTS = TASKS * 20
+        ansatz_tree = [u_b]
 
-            Itr = [1]
-            Loss = [0.3288590604026844]
-            vars = [0.6711409395970901+0j]
-
-        elif file_name == 'cqs_exe_second_demo.txt':
-            TASKS = 44 * 2
-            SHOTS = TASKS * 20
-
-            Itr = [1]
-            Loss = [1.0]
-            vars = [0j]
-
-        elif file_name == 'cqs_exe_third_demo.txt':
-            TASKS = 67 * 2
-            SHOTS = TASKS * 20
-
-            Itr = [1]
-            Loss = [1.0]
-            vars = [0j]
-
-        elif file_name == 'cqs_exe_fifth_demo.txt':
-            TASKS = 32 * 2
-            SHOTS = TASKS * 20
-
-            Itr = [1]
-            Loss = [0.22480620155038755]
-            vars = [0.7751937984493119+0j]
-
-        else:
-            TASKS = 0
-            SHOTS = 0
-
-            Itr = []
-            Loss = []
-            itr = 1
-            file1 = open(file_name, "a")
-            file1.writelines(['\n', "Itr:", str(itr), " Ansatz tree is:", str(ansatz_tree), '\n\n'])
-            file1.close()
-            # print("\n")
-            # print("Itr:", itr, " Ansatz tree is:", ansatz_tree)
-            Itr.append(itr)
-            # Performing Hadamard test to calculate Q and r
-            Q, r, TASKS, SHOTS = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend,
-                                                               shots_budget=Q_r_budgets[itr - 1], frugal=frugal,
-                                                               tasks_num=TASKS, shots_num=SHOTS,
-                                                               file_name=file_name)
-            file1 = open(file_name, "a")
-            file1.writelines(
-                ['\n', "Itr:", str(itr), " Matrix Q is:\n", str(Q), "\nItr:", str(itr), " Vector r is:\n",
-                 str(r),
-                 '\n\n'])
-            file1.close()
-            # print("\n")
-            # print("Itr:", itr, " Matrix Q is:\n", Q)
-            # print("Itr:", itr, " Vector r is:\n", r)
-            # print()
-
-            # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
-            vars = solve_combination_parameters(Q, r, which_opt=None)
-            file1 = open(file_name, "a")
-            file1.writelines(["\nItr:", str(itr), " Combination parameters are:", str(vars), '\n\n'])
-            file1.close()
-            # print("Itr:", itr, " Combination parameters are:", vars)
-            # print()
-
-            # Calculate the regression loss function to test if it is in the error range
-            loss, TASKS, SHOTS = abs(real(
-                calculate_loss_function(A, vars, ansatz_tree, backend=backend,
-                                        shots_budget=loss_budgets[itr - 1],
-                                        frugal=frugal, tasks_num=TASKS, shots_num=SHOTS, file_name=file_name)))
-            file1 = open(file_name, "a")
-            file1.writelines(['\nItr:', str(itr), " Loss:", str(loss), '\n\n'])
-            file1.close()
-            # print('Itr:', itr, "Loss:", loss)
-            Loss.append(loss)
-
-        # At the begining, the ansatz tree only contains |b>, so we define it as [[['I', 'I']]]
-        ansatz_tree, TASKS, SHOTS = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend, draw_tree=False,
-                                                       shots_budget=gradient_budgets[1 - 1], frugal=frugal,
-                                                       tasks_num=TASKS, shots_num=SHOTS, file_name=file_name)
-
-        for itr in range(2, ITR + 1):
+        # if file_name == 'cqs_exe_first_demo_Matrix_Multiplication_100_Iterations_Doesnot_Converge.txt':
+        #     TASKS = 27 * 2
+        #     SHOTS = TASKS * 20
+        #
+        #     Itr = [1]
+        #     Loss = [0.3288590604026844]
+        #     vars = [0.6711409395970901+0j]
+        #
+        # elif file_name == 'cqs_exe_second_demo.txt':
+        #     TASKS = 44 * 2
+        #     SHOTS = TASKS * 20
+        #
+        #     Itr = [1]
+        #     Loss = [1.0]
+        #     vars = [0j]
+        #
+        # elif file_name == 'cqs_exe_third_demo.txt':
+        #     TASKS = 67 * 2
+        #     SHOTS = TASKS * 20
+        #
+        #     Itr = [1]
+        #     Loss = [1.0]
+        #     vars = [0j]
+        #
+        # elif file_name == 'cqs_exe_fifth_demo.txt':
+        #     TASKS = 32 * 2
+        #     SHOTS = TASKS * 20
+        #
+        #     Itr = [1]
+        #     Loss = [0.22480620155038755]
+        #     vars = [0.7751937984493119+0j]
+        #
+        # else:
+        TASKS = 0
+        SHOTS = 0
+        Itr = []
+        Loss = []
+        for itr in range(1, ITR + 1):
             file1 = open(file_name, "a")
             file1.writelines(['\n', "Itr:", str(itr), " Ansatz tree is:", str(ansatz_tree), '\n\n'])
             file1.close()
@@ -239,6 +204,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
                                                            draw_tree=False,
                                                            shots_budget=gradient_budgets[itr - 1],
                                                            frugal=frugal,
+                                                           mtd = expan_mtd,
                                                            tasks_num=TASKS, shots_num=SHOTS,
                                                            file_name=file_name)
 
@@ -294,7 +260,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
         return Itr, Loss, TASKS, SHOTS
 
     # Itr, loss_list_hadamard_frugal = main(backend='braket', frugal=True)
-    Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend='braket', frugal=False, file_name=file_name)
+    Itr, loss_list_hadamard_frugal, TASKS, SHOTS = main(backend=backend, frugal=False, file_name=file_name)
 
 
     # Calculate the number of shots and tasks, and estimate the cost.
@@ -335,7 +301,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name):
     #     label.set_fontproperties(font_prop)
     #     label.set_fontsize(15) # Size here overrides font_prop
     plt.title("CQS: Loss - Depth", fontsize=20)
-    plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
+    plt.plot(Itr, loss_list_hadamard_frugal, 'g-', linewidth=2.5, label='Loss Function - Iteration')
 
     lgd = plt.legend() # NB different 'prop' argument for legend
     lgd = plt.legend(fontsize=20) # NB different 'prop' argument for legend

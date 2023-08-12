@@ -19,14 +19,15 @@ error = 0.1
 # Generate A with the following way
 coeffs = [1, 0.5, 0.2]
 unitaries = [[['I', 'I', 'I', 'I', 'I']], [['Z', 'X', 'I', 'I', 'Y']], [['Y', 'I', 'Y', 'Z', 'X']]]
-file_name = 'cqs_exe_sixth_demo.txt'
+file_name = '../../results/Quantum Devices/Original Data/cqs_exe_sixth_demo.txt'
+u_b = [['I', 'I', 'I', 'I', 'I']]
 # Number of Hadamard tests in total: 636
 # So the total shot budget is: 636 * 11 =  6996
 
 # coeffs =  [0.358, 0.011, -0.919, -0.987]
 # unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
 
-EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, file_name)
+EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name)
 
 
 

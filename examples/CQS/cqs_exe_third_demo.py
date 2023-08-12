@@ -6,7 +6,7 @@ dim = 2 ** qubit_number
 # According to assumption 1, the matrix A has the form of linear combination of known unitaries.
 # For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
 number_of_terms = 5
-ITR = 10
+ITR = 16
 
 # Total Budget of shots
 shots_total_budget = 10 ** 6
@@ -20,7 +20,7 @@ error = 0.1
 coeffs = [1.423674376436618, 0.5788003037890421, 1.7368252690727974, 1.6660186975242612, 1.1814000196931385]
 unitaries = [[['X', 'Z', 'X', 'Y', 'I', 'X', 'X']], [['Y', 'Z', 'I', 'Z', 'Z', 'X', 'Z']], [['I', 'X', 'I', 'Z', 'X', 'X', 'Y']], [['Y', 'X', 'I', 'Y', 'X', 'I', 'Y']], [['Z', 'I', 'X', 'X', 'X', 'Y', 'Z']]]
 
-file_name = 'cqs_exe_third_demo.txt'
+file_name = '../../results/Quantum Devices/Original Data/cqs_exe_third_demo.txt'
 # Number of Hadamard tests in total: 636
 # So the total shot budget is: 636 * 11 =  6996
 
