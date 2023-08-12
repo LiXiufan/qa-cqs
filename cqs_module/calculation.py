@@ -35,9 +35,13 @@ from numpy import conj
 from hardware.execute import Hadamard_test
 from qiskit_ionq import IonQProvider
 from qiskit_braket_provider import AWSBraketProvider
+import time
+from datetime import datetime
+from braket.aws import AwsQuantumJob
 
-DEVICE = 'SV1'
-# DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'SV1'
+BRAKET_DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'Harmony'
 
 
 def U_list_dagger(U):
@@ -64,18 +68,53 @@ def U_list_dagger(U):
 #     return exps
 
 # Braket Access
-def calculate_statistics(backend, jobs_ids):
+def calculate_statistics(backend, jobs_ids, file_name='message.txt'):
     # a list of jobs
     exps = []
     for job_id in jobs_ids:
         if job_id == 1 or job_id == 0:
             exp = job_id
+            # print("This circuit is composed of identities, skip.")
+            file1 = open(file_name, "a")
+            file1.writelines(["This circuit is composed of identities, skip.\n"])
+            file1.close()
         else:
+            job = backend.retrieve_job(job_id)
+            status = job.status()
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            file1 = open(file_name, "a")
+            file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
+            file1.writelines(["Current Status:", str(status), '\n\n'])
+            file1.close()
+            print("Current Time =", current_time)
+            print('Current Status:', status)
+            print()
+            DONE = status.DONE
+            while status != DONE:
+                time.sleep(3600)
+                now = datetime.now()
+                current_time = now.strftime("%H:%M:%S")
+                status = job.status()
+                file1 = open(file_name, "a")
+                file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
+                file1.writelines(["Current Status:", str(status), '\n\n'])
+                file1.close()
+                print("Current Time =", current_time)
+                print('Status:', status)
+                print()
+            # while not is_result_availble():
+            #     # block for a moment
+            #     sleep(1)
             count = backend.retrieve_job(job_id).result().get_counts()
             new_count = {'0': 0, '1': 0}
             for k in count.keys():
                 new_count[k[-1]] += count[k]
             count = new_count
+            file1 = open(file_name, "a")
+            file1.writelines(["The sampling result is:", str(count), '\n'])
+            file1.close()
+            # print("The sampling result is:", count)
             if count['0'] == 0:
                 p0 = 0
                 p1 = 1
@@ -83,17 +122,51 @@ def calculate_statistics(backend, jobs_ids):
                 p0 = 1
                 p1 = 0
             else:
-                # shots = sum(list(count.values()))
-                # p0 = count['0'] / shots
-                # p1 = count['1'] / shots
-                p0 = 0.5
-                p1 = 0.5
+                shots = sum(list(count.values()))
+                p0 = count['0'] / shots
+                p1 = count['1'] / shots
+            file1 = open(file_name, "a")
+            file1.writelines(["The sampling probability of getting 0 is: p0 =", str(p0), '\n'])
+            file1.writelines(["The sampling probability of getting 1 is: p1 =", str(p1), '\n'])
+            file1.close()
+            # print("The sampling probability of getting 0 is: p0 =", p0)
+            # print("The sampling probability of getting 1 is: p1 =", p1)
+            if count['0'] != 0 and count['1'] != 0:
+                if p0 < 0.2:
+                    p0 = 0
+                    p1 = 1
+                    file1 = open(file_name, "a")
+                    file1.writelines(["p0 < 0.2: set p0 = 0 and p1 = 1.", '\n'])
+                    file1.writelines(["Expectation value is -1.", '\n'])
+                    file1.close()
+                    # print("p0 < 0.2: set p0 = 0 and p1 = 1.")
+                    # print("Expectation value is -1.")
+                else:
+                    if p1 < 0.2:
+                        p0 = 1
+                        p1 = 0
+                        file1 = open(file_name, "a")
+                        file1.writelines(["p0 > 0.8: set p0 = 1 and p1 = 0.", '\n'])
+                        file1.writelines(["Expectation value is 1.", '\n'])
+                        file1.close()
+                        # print("p0 > 0.8: set p0 = 1 and p1 = 0.")
+                        # print("Expectation value is 1.")
+                    else:
+                        p0 = 0.5
+                        p1 = 0.5
+                        file1 = open(file_name, "a")
+                        file1.writelines(["0.2 <= p0 <= 0.8: set p0 = 0.5 and p1 = 0.5.", '\n'])
+                        file1.writelines(["Expectation value is 0.", '\n'])
+                        file1.close()
+                        # print("0.2 <= p0 <= 0.8: set p0 = 0.5 and p1 = 0.5.")
+                        # print("Expectation value is 0.")
+            # print()
             exp = p0 - p1
         exps.append(exp)
     return exps
 
 
-def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=1024, frugal=False, tasks_num = 0, shots_num = 0):
+def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=1024, frugal=False, tasks_num = 0, shots_num = 0, file_name='message.txt'):
     """
         Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
         But our objective function is:                                         z^T Q z  - 2 r^T z + 1
@@ -180,6 +253,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
                         shots = 20
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_K_R.append(jobid_R)
@@ -189,6 +265,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
                 shots = 20
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_q_R.append(jobid_R)
@@ -201,12 +280,12 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
             simulator_backend = provider.get_backend("ionq_simulator")
         else:
             provider = AWSBraketProvider()
-            simulator_backend = provider.get_backend(DEVICE)
+            simulator_backend = provider.get_backend(BRAKET_DEVICE)
 
-        exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R)
-        exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I)
-        exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R)
-        exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I)
+        exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
+        exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
+        exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
+        exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
 
         for i in range(tree_depth):
             for j in range(tree_depth):
@@ -248,6 +327,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
                         shots = 20
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product = inner_product_real - inner_product_imag * 1j
@@ -264,6 +346,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
                 shots = 20
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product = inner_product_real - inner_product_imag * 1j
@@ -282,7 +367,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
     return Q, r, tasks_num, shots_num
 
 
-def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=1024, frugal=False, tasks_num = 0, shots_num = 0):
+def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=1024, frugal=False, tasks_num = 0, shots_num = 0, file_name='message.txt'):
     A_coeffs = A.get_coeff()
     A_unitaries = A.get_unitary()
     A_terms_number = len(A_coeffs)
@@ -340,6 +425,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                         shots = 20
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
                             ansatz_tree[j]
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_1_R.append(jobid_R)
                         jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
@@ -350,6 +438,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                 shots = P_Loss_term_2[i * A_terms_number + j]
                 shots = 20
                 u = A_unitaries[j] + ansatz_tree[i]
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_2_R.append(jobid_R)
 
@@ -358,6 +449,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                 shots = P_Loss_term_3[i * A_terms_number + j]
                 shots = 20
                 u = A_unitaries[j] + ansatz_tree[i]
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_3_I.append(jobid_I)
 
@@ -369,7 +463,7 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
             simulator_backend = provider.get_backend("ionq_simulator")
         else:
             provider = AWSBraketProvider()
-            simulator_backend = provider.get_backend(DEVICE)
+            simulator_backend = provider.get_backend(BRAKET_DEVICE)
 
         exp_1_R = calculate_statistics(simulator_backend, Job_ids_1_R)
         exp_1_I = calculate_statistics(simulator_backend, Job_ids_1_I)
@@ -418,6 +512,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                         shots = 20
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
                             ansatz_tree[j]
+                        file1 = open(file_name, "a")
+                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        file1.close()
                         inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product = inner_product_real - inner_product_imag * 1j
@@ -429,6 +526,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                 shots = P_Loss_term_2[i * A_terms_number + j]
                 shots = 20
                 u = A_unitaries[j] + ansatz_tree[i]
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 term_2 += real(vars[i]) * A_coeffs[j] * inner_product_real
 
@@ -438,6 +538,9 @@ def calculate_loss_function(A, vars, ansatz_tree, backend=None, shots_budget=102
                 shots = P_Loss_term_3[i * A_terms_number + j]
                 shots = 20
                 u = A_unitaries[j] + ansatz_tree[i]
+                file1 = open(file_name, "a")
+                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                file1.close()
                 inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 term_3 += imag(vars[i]) * A_coeffs[j] * inner_product_imag
 

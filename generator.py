@@ -31,6 +31,7 @@ from numpy import matmul as mat
 from numpy import kron
 from Error import ArgumentError
 from utils import PauliStrings
+from cqs_module.verifier import get_unitary
 from functools import reduce
 
 __all__ = [
@@ -155,18 +156,9 @@ class CoeffMatrix:
 
         for i in range(self.__term_number):
             coeff = self.__coeff[i]
-            unitaries = self.__unitary[i]
-            tensor_product = identity(2 ** self.__width)
-            for P in unitaries:
-                if self.__which_form == 'Pauli':
-                    if self.__width == 1:
-                        tensor_product = PauliStrings(P[0]) @ tensor_product
-                    else:
-                        tensor_product = reduce(lambda x, y: kron(x, y),
-                                                [PauliStrings(P[j]) for j in range(self.__width)]) @ tensor_product
-                else:
-                    tensor_product = 0 @ tensor_product
-            mat += coeff * tensor_product
+            u = self.__unitary[i]
+            u_mat = get_unitary(u)
+            mat += coeff * u_mat
 
         self.__matrix = mat
         return self.__matrix

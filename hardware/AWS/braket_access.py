@@ -27,8 +27,12 @@
 from qiskit import QuantumCircuit, transpile
 from qiskit_braket_provider import AWSBraketProvider
 
+# BRAKET_DEVICE = 'SV1'
+BRAKET_DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'Harmony'
 
 def Hadamard_test(U, alpha=1, shots=1024):
+
     # C = []
     # for u in U:
     # Initialize settings
@@ -49,7 +53,7 @@ def Hadamard_test(U, alpha=1, shots=1024):
     provider = AWSBraketProvider()
     # simulator_backend = provider.get_backend("ionq_qpu.aria-1")
     # simulator_backend = provider.get_backend("ionq_qpu.harmony")
-    simulator_backend = provider.get_backend("Aria 1")
+    simulator_backend = provider.get_backend(BRAKET_DEVICE)
 
     # Create gates for the unitary
     # U = [U1, U2], U1 operates before U2, --> |psi> = U2 U1 |0>
