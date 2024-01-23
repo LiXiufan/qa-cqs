@@ -34,32 +34,52 @@
                        Ax  =  b
 """
 
-from cvxopt import matrix, spmatrix, sparse
-from cvxopt.solvers import qp, options
-from cvxopt import blas
-from numpy import linalg, array, identity, diag, multiply, real, imag
+from cvxopt import matrix
+from cvxopt.solvers import qp
+from numpy import linalg, array, diag, multiply, real, imag
+from numpy import array, ndarray
+from numpy import transpose, conj
 from sympy import Matrix
+from typing import List, Tuple
 
-def solve_combination_parameters(Q, r, which_opt=None):
+__all__ = [
+    "solve_combination_parameters"
+]
 
+
+def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tuple[float, List]:
+    r"""Optimization module for solving the optimal combination parameters.
+
+    In this module, we implement the CVXOPT package as an external resource package.
+    CVXOPT is a free software package for convex optimization based on the Python programming language.
+    Reference: https://cvxopt.org
+    MIT Course: https://courses.csail.mit.edu/6.867/wiki/images/a/a7/Qp-cvxopt.pdf
+
+    CVXOPT Notation of a quadratic optimization problem:
+                min    1/2  x^T Q x + q^T r
+          subject to   Gx  <=  h
+                       Ax  =  b
+
+    Args:
+        Q (np.ndarray): the auxiliary matrix Q
+        r (np.ndarray): the auxiliary vector r
+
+    Returns:
+        Tuple[float, List]: loss and the optimal combination parameters
+    """
     if which_opt is None:
         which_opt = 'cvxopt'
 
     if which_opt == 'cvxopt':
         Q = 2 * matrix(Q)
         r = (-2) * matrix(r)
-
-        # Q = matrix([[1.0, 0.0],[0.0, 0.5]])
-        # or matrix(np.array())
-        # r = matrix([3.0, 4.0])
-
-        # Solve
+        # Solve the optimization problem using the kkt solver with regularization constant of 1e-12
+        # Note: for more realistic experiments, due to the erroneous results,
+        # it is suggested to change the regularization constant to get a better performance.
         # comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-16})['x']
-        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-12})['x']
-        # comb_params = qp(Q, r)['x']
+        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-2})['x']
 
     elif which_opt == 'inv':
-
         Q = Matrix(Q)
         P, D = Q.diagonalize()
         D = array(D, dtype='complex128')
@@ -77,15 +97,6 @@ def solve_combination_parameters(Q, r, which_opt=None):
             D_diag_inv.append(d_inv)
         D_diag_inv = array(D_diag_inv, dtype='complex128')
         comb_params = multiply(D_diag_inv, r.reshape(-1))
-        print(comb_params)
-
-        # P, D = array(P, dtype='float64'),
-        # comb_params = linalg.inv(Q / 2) @ (r / (-2))
-
-        # Q = P D P^-1
-        # Q = Matrix(Q)
-        # P, D = Q.diagonalize()
-
     else:
         raise ValueError
 
@@ -96,6 +107,9 @@ def solve_combination_parameters(Q, r, which_opt=None):
         var = comb_params[i] + comb_params[half_var + i] * 1j
         vars[i] = var
 
-    return vars
-
-
+    params_array = array(comb_params).reshape(-1, 1)
+    Q_array = array(Q / 2)
+    r_array = array(r / (-2)).reshape(-1, 1)
+    loss = abs(
+        (transpose(params_array) @ Q_array @ params_array - 2 * transpose(r_array) @ params_array + 1).item())
+    return loss, vars

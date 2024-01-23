@@ -31,7 +31,7 @@ file_name = 'cqs_exe_first_demo.txt'
 # coeffs =  [0.358, 0.011, -0.919, -0.987]
 # unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
 
-EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend='matrix', expan_mtd='gradient')
+EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend=None, expan_mtd='gradient')
 
 
 

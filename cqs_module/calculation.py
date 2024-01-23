@@ -43,7 +43,6 @@ from braket.aws import AwsQuantumJob
 BRAKET_DEVICE = 'Aria 1'
 # BRAKET_DEVICE = 'Harmony'
 
-
 def U_list_dagger(U):
     return U[::-1]
 
@@ -253,9 +252,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
                         shots = 20
-                        file1 = open(file_name, "a")
-                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                        file1.close()
+                        # file1 = open(file_name, "a")
+                        # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        # file1.close()
                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         Job_ids_K_R.append(jobid_R)
@@ -265,9 +264,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
                 shots = 20
-                file1 = open(file_name, "a")
-                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                file1.close()
+                # file1 = open(file_name, "a")
+                # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                # file1.close()
                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 Job_ids_q_R.append(jobid_R)
@@ -327,9 +326,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
                         shots = 20
-                        file1 = open(file_name, "a")
-                        file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                        file1.close()
+                        # file1 = open(file_name, "a")
+                        # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                        # file1.close()
                         inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                         inner_product = inner_product_real - inner_product_imag * 1j
@@ -346,9 +345,9 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=None, shots_budget=102
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
                 shots = 20
-                file1 = open(file_name, "a")
-                file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                file1.close()
+                # file1 = open(file_name, "a")
+                # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                # file1.close()
                 inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                 inner_product = inner_product_real - inner_product_imag * 1j

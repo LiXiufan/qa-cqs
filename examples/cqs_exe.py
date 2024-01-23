@@ -24,7 +24,7 @@
     Execution of the program.
 """
 
-from generator import CoeffMatrix
+from cqs_module.object import CoeffMatrix
 from numpy import real, array
 from cqs_module.optimization import solve_combination_parameters
 from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function

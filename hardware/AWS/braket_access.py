@@ -28,8 +28,9 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_braket_provider import AWSBraketProvider
 
 # BRAKET_DEVICE = 'SV1'
-BRAKET_DEVICE = 'Aria 1'
-# BRAKET_DEVICE = 'Harmony'
+# BRAKET_DEVICE = 'Lucy'
+# BRAKET_DEVICE = 'Aquila'
+BRAKET_DEVICE = 'Harmony'
 
 def Hadamard_test(U, alpha=1, shots=1024):
 
@@ -77,14 +78,18 @@ def Hadamard_test(U, alpha=1, shots=1024):
 
     # Ancilla qubit as q0, others are tagged from q1 to qn
     # QuantumCircuit(4, 3) means a QuantumCircuit with 4 qubits and 3 classical bits
-    Hadamard_circuit = QuantumCircuit(ancilla + width, 1)
+    # Hadamard_circuit = QuantumCircuit(ancilla + width, 1)
+    Hadamard_circuit = QuantumCircuit(ancilla + width, ancilla + width)
+
     Hadamard_circuit.h(0)
     if alpha == 1j:
         Hadamard_circuit.s(0)
     Hadamard_circuit.append(CU_gate, [0] + list(range(1, width + 1)))
     Hadamard_circuit.h(0)
-    Hadamard_circuit.measure([0], [0])
-
+    # Hadamard_circuit.measure([0], [0])
+    for i in range(ancilla + width):
+        Hadamard_circuit.measure([i], [i])
+    print(Hadamard_circuit)
     # Transpile the circuit for Hadamard test
     # result = transpile(Hadamard_circuit, backend=simulator_backend, optimization_level=3)
     result = transpile(Hadamard_circuit, backend=simulator_backend)

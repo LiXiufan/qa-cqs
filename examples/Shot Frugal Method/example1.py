@@ -26,7 +26,7 @@
     Goal: Estimate the O with a limited number of shots.
 """
 
-from generator import CoeffMatrix
+from cqs_module.object import CoeffMatrix
 from numpy import array, linalg
 from numpy import log2, log10
 from numpy import sqrt, kron, transpose, conj, real, imag, append

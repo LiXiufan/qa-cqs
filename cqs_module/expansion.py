@@ -41,8 +41,8 @@ from qiskit_braket_provider import AWSBraketProvider
 # alphas = [1.6317321653264614, 0.2249104575899552, 1.7897631234464821]
 
 # BRAKET_DEVICE = 'SV1'
-BRAKET_DEVICE = 'Aria 1'
-# BRAKET_DEVICE = 'Harmony'
+# BRAKET_DEVICE = 'Aria 1'
+BRAKET_DEVICE = 'Harmony'
 
 
 def number_to_base(n, b):
@@ -126,9 +126,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                             shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                             u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
                             shots = 20
-                            file1 = open(file_name, "a")
-                            file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                            file1.close()
+                            # file1 = open(file_name, "a")
+                            # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                            # file1.close()
                             jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                             Job_ids_1_R.append(jobid_R)
                             jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
@@ -138,9 +138,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                     shots = P_Child_Nodes_Term_2[j]
                     u = U_list_dagger(child_node) + A_unitaries[j]
                     shots = 20
-                    file1 = open(file_name, "a")
-                    file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                    file1.close()
+                    # file1 = open(file_name, "a")
+                    # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                    # file1.close()
                     jobid_R, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                     Job_ids_2_R.append(jobid_R)
                     jobid_I, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
@@ -196,9 +196,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                             shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                             shots = 20
                             u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
-                            file1 = open(file_name, "a")
-                            file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                            file1.close()
+                            # file1 = open(file_name, "a")
+                            # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                            # file1.close()
                             inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                             inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                             inner_product = inner_product_real - inner_product_imag * 1j
@@ -211,9 +211,9 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                     shots = P_Child_Nodes_Term_2[j]
                     shots = 20
                     u = U_list_dagger(child_node) + A_unitaries[j]
-                    file1 = open(file_name, "a")
-                    file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                    file1.close()
+                    # file1 = open(file_name, "a")
+                    # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+                    # file1.close()
                     inner_product_real, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                     inner_product_imag, tasks_num, shots_num  = Hadamard_test(u, backend=backend, alpha=1j, shots=shots, tasks_num = tasks_num, shots_num = shots_num)
                     inner_product = inner_product_real - inner_product_imag * 1j
@@ -255,6 +255,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
         for i in idx:
             child_node += A_unitaries[i]
         ansatz_tree.append(child_node)
+    print(ansatz_tree)
     return ansatz_tree, tasks_num, shots_num
 
 
