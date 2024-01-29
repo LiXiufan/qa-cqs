@@ -27,13 +27,13 @@
 from cqs_module.object import CoeffMatrix
 from numpy import real, array
 from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
+from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test
 from cqs_module.expansion import expand_ansatz_tree
 from cqs_module.verifier import get_unitary
 from numpy import linalg, log
 
 import matplotlib.pyplot as plt
-def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend=None, expan_mtd=None):
+def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, loss_type=None, backend=None, expan_mtd=None):
     # Use Braket SDK Cost Tracking to estimate the cost to run this example
     # from braket.tracking import Tracker
     # t = Tracker().start()
@@ -133,7 +133,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, b
             # print("Itr:", itr, " Ansatz tree is:", ansatz_tree)
             Itr.append(itr)
             # Performing Hadamard test to calculate Q and r
-            Q, r, TASKS, SHOTS = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend,
+            Q, r, TASKS, SHOTS = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=loss_type, backend=backend,
                                                                shots_budget=Q_r_budgets[itr - 1], frugal=frugal,
                                                                tasks_num=TASKS, shots_num=SHOTS,
                                                                file_name=file_name)
@@ -155,7 +155,7 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, b
             file1.writelines(['\nItr:', str(itr), " Loss:", str(loss), '\n\n'])
             file1.close()
             Loss.append(loss)
-            ansatz_tree, TASKS, SHOTS = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend,
+            ansatz_tree, TASKS, SHOTS = expand_ansatz_tree(A, vars, ansatz_tree, loss_type=loss_type, backend=backend,
                                                            draw_tree=False,
                                                            shots_budget=gradient_budgets[itr - 1],
                                                            frugal=frugal,

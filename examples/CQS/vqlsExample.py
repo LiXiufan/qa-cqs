@@ -33,7 +33,7 @@ dim = 2 ** qubit_number
 # According to assumption 1, the matrix A has the form of linear combination of known unitaries.
 # For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
 number_of_terms = 3
-ITR = 20
+ITR = 5
 
 # Total Budget of shots
 shots_total_budget = 10 ** 6
@@ -48,8 +48,9 @@ coeffs = [1, 0.2, 0.2]
 unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'I', 'I', 'I']]]
 u_b = [['H', 'I', 'H', 'H', 'H']]
 
-file_name = 'vqlsExampleGradient.txt'
-EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend='matrix', expan_mtd='gradient')
+file_name = 'vqlsExample.txt'
+EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, loss_type='hamiltonian', backend='matrix', expan_mtd='gradient')
+
 
 
 

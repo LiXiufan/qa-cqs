@@ -77,7 +77,7 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
         # Note: for more realistic experiments, due to the erroneous results,
         # it is suggested to change the regularization constant to get a better performance.
         # comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-16})['x']
-        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-2})['x']
+        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-15})['x']
 
     elif which_opt == 'inv':
         Q = Matrix(Q)
@@ -107,9 +107,18 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
         var = comb_params[i] + comb_params[half_var + i] * 1j
         vars[i] = var
 
+    # Calculate l2-norm loss function
     params_array = array(comb_params).reshape(-1, 1)
     Q_array = array(Q / 2)
     r_array = array(r / (-2)).reshape(-1, 1)
     loss = abs(
         (transpose(params_array) @ Q_array @ params_array - 2 * transpose(r_array) @ params_array + 1).item())
+
+
+    # Calculate Hamiltonian loss fucntion
+
+
+
+
+
     return loss, vars

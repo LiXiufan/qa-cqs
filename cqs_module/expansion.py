@@ -70,7 +70,7 @@ def get_idx(K_A, tree_depth):
         else:
             continue
 
-def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shots_budget=1024, frugal=False, mtd=None , tasks_num = 0, shots_num = 0, file_name='message.txt'):
+def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_tree=False, shots_budget=1024, frugal=False, mtd=None , tasks_num = 0, shots_num = 0, file_name='message.txt'):
     if backend is None:
         backend = 'eigens'
     if mtd is None:
@@ -119,13 +119,25 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                 Job_ids_1_I = []
                 Job_ids_2_R = []
                 Job_ids_2_I = []
+                Job_ids_reg_R = []
+                Job_ids_reg_I = []
+
                 for j in range(tree_depth):
                     anstaz_state = ansatz_tree[j]
+                    shots = 20
+                    if loss_type == 'l2reg':
+                        u = U_list_dagger(child_node) + anstaz_state
+                        jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+                                                                      tasks_num=tasks_num, shots_num=shots_num)
+                        Job_ids_reg_R.append(jobid_R)
+                        jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+                                                                      tasks_num=tasks_num, shots_num=shots_num)
+                        Job_ids_reg_I.append(jobid_I)
+
                     for k in range(A_terms_number):
                         for l in range(A_terms_number):
                             shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
                             u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
-                            shots = 20
                             # file1 = open(file_name, "a")
                             # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
                             # file1.close()
@@ -159,12 +171,13 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                 exp_1_I = calculate_statistics(simulator_backend, Job_ids_1_I)
                 exp_2_R = calculate_statistics(simulator_backend, Job_ids_2_R)
                 exp_2_I = calculate_statistics(simulator_backend, Job_ids_2_I)
+                exp_reg_R = calculate_statistics(simulator_backend, Job_ids_reg_R)
+                exp_reg_I = calculate_statistics(simulator_backend, Job_ids_reg_I)
 
                 term_1 = 0
                 for j in range(tree_depth):
                     term_1_1 = 0
                     alpha = vars[j]
-                    anstaz_state = ansatz_tree[j]
                     for k in range(A_terms_number):
                         for l in range(A_terms_number):
                             beta_k = A_coeffs[k]
@@ -183,12 +196,33 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                     inner_product = inner_product_real - inner_product_imag * 1j
                     term_2 += beta_j * inner_product
 
+                if loss_type == 'l2reg':
+                    term_reg = 0
+                    for j in range(tree_depth):
+                        alpha = vars[j]
+                        inner_product_real = exp_reg_R[j]
+                        inner_product_imag = exp_reg_I[j]
+                        inner_product = inner_product_real - inner_product_imag * 1j
+                        term_reg += alpha * inner_product
+
             else:
                 term_1 = 0
+                term_reg = 0
                 for j in range(tree_depth):
                     term_1_1 = 0
                     alpha = vars[j]
                     anstaz_state = ansatz_tree[j]
+
+                    if loss_type == 'l2reg':
+                        u = U_list_dagger(child_node) + anstaz_state
+                        shots = 20
+                        inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+                                                                      tasks_num=tasks_num, shots_num=shots_num)
+                        inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+                                                                      tasks_num=tasks_num, shots_num=shots_num)
+                        inner_product = inner_product_real - inner_product_imag * 1j
+                        term_reg += alpha * inner_product
+
                     for k in range(A_terms_number):
                         for l in range(A_terms_number):
                             beta_k = A_coeffs[k]
@@ -219,7 +253,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
                     inner_product = inner_product_real - inner_product_imag * 1j
                     term_2 += beta_j * inner_product
 
-            gradient_overlap = abs(2 * term_1 - 2 * term_2)
+            gradient_overlap = abs(2 * term_1 - 2 * term_2 + term_reg)
             gradient_overlaps[i] = gradient_overlap
 
 
