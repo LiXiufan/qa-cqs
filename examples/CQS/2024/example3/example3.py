@@ -34,7 +34,7 @@ dim = 2 ** qubit_number
 # According to assumption 1, the matrix A has the form of linear combination of known unitaries.
 # For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
 number_of_terms = 4
-ITR = 20
+ITR = 6
 
 # Total Budget of shots
 shots_total_budget = 10 ** 6
@@ -44,18 +44,14 @@ error = 0.1
 # Initialize the coefficient matrix
 # print('Qubits are tagged as:', ['Q' + str(i) for i in range(A.get_width())])
 
-# Generate A with the following way
-coeffs = [0.358,
-          0.011,
-          -0.919,
-          -0.987]
-unitaries = [[['I', 'Y', 'X', 'I', 'Y']],
-             [['Z', 'X', 'Y', 'X', 'I']],
-             [['X', 'X', 'Z', 'I', 'X']],
-             [['Z', 'I', 'X', 'Z', 'Z']]]
-u_b = [['H', 'H', 'H', 'H', 'H']]
+# Generate A with the following way (problem 8)
+coeffs = [1, 0.5, 0.2]
+unitaries = [[['I', 'I', 'I', 'I', 'I']],
+             [['X', 'Z', 'X', 'I', 'Z']],
+             [['Y', 'X', 'I', 'Z', 'Y']]]
+u_b = [['I', 'I', 'I', 'I', 'I']]
 
-file_name = 'example1.txt'
+file_name = 'example3.txt'
 EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, backend='matrix', expan_mtd='gradient')
 
 

@@ -40,8 +40,8 @@ from datetime import datetime
 from braket.aws import AwsQuantumJob
 
 # BRAKET_DEVICE = 'SV1'
-BRAKET_DEVICE = 'Aria 1'
-# BRAKET_DEVICE = 'Harmony'
+# BRAKET_DEVICE = 'Aria 1'
+BRAKET_DEVICE = 'Harmony'
 
 def U_list_dagger(U):
     return U[::-1]

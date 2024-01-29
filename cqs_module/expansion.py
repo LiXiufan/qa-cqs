@@ -255,7 +255,6 @@ def expand_ansatz_tree(A, vars, ansatz_tree, backend=None, draw_tree=False, shot
         for i in idx:
             child_node += A_unitaries[i]
         ansatz_tree.append(child_node)
-    print(ansatz_tree)
     return ansatz_tree, tasks_num, shots_num
 
 

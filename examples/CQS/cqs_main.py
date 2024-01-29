@@ -69,13 +69,13 @@ def EXE(qubit_number, number_of_terms, ITR, coeffs, unitaries, u_b, file_name, b
     # unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
 
     A.generate(which_form='Unitaries', given_unitaries=unitaries, given_coeffs=coeffs)
-    A_mat = A.get_matrix()
+    # A_mat = A.get_matrix()
     # A_norm = linalg.norm(A_mat)
     # print(A_norm)
-    con = linalg.norm(A_mat) * linalg.norm(linalg.inv(A_mat))
-    print("The condition number of A is:", con)
-    print('The per-measurement quantum circuit depth is at the order of magnitude of:', con * log(con) + con * log(10))
-    print("The size of bases is:", number_of_terms ** con * log(con/0.1))
+    # con = linalg.norm(A_mat) * linalg.norm(linalg.inv(A_mat))
+    # print("The condition number of A is:", con)
+    # print('The per-measurement quantum circuit depth is at the order of magnitude of:', con * log(con) + con * log(10))
+    # print("The size of bases is:", number_of_terms ** con * log(con/0.1))
     B = sum([abs(coeff) for coeff in coeffs])
     # Values on the right hand side of the equation.
     u_b_mat = get_unitary(u_b)
