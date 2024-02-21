@@ -23,11 +23,10 @@
 
 """
     An example of customized linear systems of equations.
-
 """
 
 from cqs_module.object import CoeffMatrix
-from numpy import real, array
+from numpy import array
 from cqs_module.optimization import solve_combination_parameters
 from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test
 from cqs_module.verifier import get_unitary
@@ -37,8 +36,8 @@ dim = 2 ** qubit_number
 # Set the number of terms of the coefficient matrix A on the left hand side of the equation.
 # According to assumption 1, the matrix A has the form of linear combination of known unitaries.
 # For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
-number_of_terms = 4
-ITR = 6
+number_of_terms = 3
+ITR = 5
 
 # Total Budget of shots
 shots_total_budget = 10 ** 6
@@ -96,9 +95,12 @@ for itr in range(1, ITR + 1):
 
 
 # Customize the Ansatz tree and solve the probelm given a certain type
-itr = 1
-ansatz_tree = [[['I', 'I', 'I', 'I', 'I']], [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z']], [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y']], [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y'], ['X', 'Z', 'X', 'I', 'Z']], [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y']]]
-
+itr = 5
+ansatz_tree = [[['I', 'I', 'I', 'I', 'I']],
+               [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z']],
+               [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y']],
+               [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y'], ['X', 'Z', 'X', 'I', 'Z']],
+               [['I', 'I', 'I', 'I', 'I'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y'], ['X', 'Z', 'X', 'I', 'Z'], ['Y', 'X', 'I', 'Z', 'Y']]]
 
 backend = 'braket'
 TASKS = 0
@@ -122,5 +124,9 @@ file1 = open(file_name, "a")
 file1.writelines(["\nItr:", str(itr), " Combination parameters are:", str(vars), '\n\n'])
 file1.writelines(['\nItr:', str(itr), " Loss:", str(loss), '\n\n'])
 file1.close()
+
+
+
+
 
 

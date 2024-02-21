@@ -39,8 +39,8 @@ import time
 from datetime import datetime
 
 # BRAKET_DEVICE = 'SV1'
-# BRAKET_DEVICE = 'Aria 1'
-BRAKET_DEVICE = 'Harmony'
+BRAKET_DEVICE = 'Aria 1'
+# BRAKET_DEVICE = 'Harmony'
 
 
 def U_list_dagger(U):
@@ -229,7 +229,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
                             ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
-                        shots = 20
+                        shots = 400
                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
                                                                       tasks_num=tasks_num, shots_num=shots_num)
                         jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
@@ -245,7 +245,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
             for k in range(A_terms_number):
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
-                shots = 20
+                shots = 400
                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
                                                               tasks_num=tasks_num, shots_num=shots_num)
                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
@@ -269,7 +269,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
             for i in range(tree_depth):
                 for j in range(tree_depth):
                     u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 20
+                    shots = 400
                     jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
                                                                   tasks_num=tasks_num, shots_num=shots_num)
                     jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
@@ -288,7 +288,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
                 for k in range(A_terms_number):
                     u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                     shots = P_A[k]
-                    shots = 20
+                    shots = 400
                     jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
                                                                   tasks_num=tasks_num, shots_num=shots_num)
                     jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
@@ -347,7 +347,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
                             ansatz_tree[j]
                         shots = P_A_A[k * A_terms_number + l]
-                        shots = 20
+                        shots = 400
                         # file1 = open(file_name, "a")
                         # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
                         # file1.close()
@@ -361,7 +361,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
                         item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
                 if loss_type == 'l2reg':
                     u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 20
+                    shots = 400
                     inner_product_real, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
                                                                   tasks_num=tasks_num, shots_num=shots_num)
                     inner_product_imag, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
@@ -380,7 +380,7 @@ def calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, loss_type=None, backend=None, 
             for k in range(A_terms_number):
                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
                 shots = P_A[k]
-                shots = 20
+                shots = 400
                 # file1 = open(file_name, "a")
                 # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
                 # file1.close()

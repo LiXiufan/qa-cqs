@@ -124,7 +124,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_
 
                 for j in range(tree_depth):
                     anstaz_state = ansatz_tree[j]
-                    shots = 20
+                    shots = 100
                     if loss_type == 'l2reg':
                         u = U_list_dagger(child_node) + anstaz_state
                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
@@ -149,7 +149,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_
                 for j in range(A_terms_number):
                     shots = P_Child_Nodes_Term_2[j]
                     u = U_list_dagger(child_node) + A_unitaries[j]
-                    shots = 20
+                    shots = 100
                     # file1 = open(file_name, "a")
                     # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
                     # file1.close()
@@ -215,7 +215,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_
 
                     if loss_type == 'l2reg':
                         u = U_list_dagger(child_node) + anstaz_state
-                        shots = 20
+                        shots = 100
                         inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
                                                                       tasks_num=tasks_num, shots_num=shots_num)
                         inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
@@ -228,7 +228,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_
                             beta_k = A_coeffs[k]
                             beta_l = A_coeffs[l]
                             shots = P_Child_Nodes_Term_1[j * A_terms_number * A_terms_number + k * A_terms_number + l]
-                            shots = 20
+                            shots = 100
                             u = U_list_dagger(child_node) + A_unitaries[k] + A_unitaries[l] + anstaz_state
                             # file1 = open(file_name, "a")
                             # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
@@ -243,7 +243,7 @@ def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_
                 for j in range(A_terms_number):
                     beta_j = A_coeffs[j]
                     shots = P_Child_Nodes_Term_2[j]
-                    shots = 20
+                    shots = 100
                     u = U_list_dagger(child_node) + A_unitaries[j]
                     # file1 = open(file_name, "a")
                     # file1.writelines(["The unitary for estimation is:", str(u), '\n'])

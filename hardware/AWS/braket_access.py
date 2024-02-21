@@ -30,7 +30,8 @@ from qiskit_braket_provider import AWSBraketProvider
 # BRAKET_DEVICE = 'SV1'
 # BRAKET_DEVICE = 'Lucy'
 # BRAKET_DEVICE = 'Aquila'
-BRAKET_DEVICE = 'Harmony'
+# BRAKET_DEVICE = 'Harmony'
+BRAKET_DEVICE = 'Aria 1'
 
 def Hadamard_test(U, alpha=1, shots=1024):
 
