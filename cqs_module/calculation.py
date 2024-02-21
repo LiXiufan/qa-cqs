@@ -38,6 +38,7 @@ from qiskit_braket_provider import AWSBraketProvider
 import time
 from datetime import datetime
 
+
 # BRAKET_DEVICE = 'SV1'
 BRAKET_DEVICE = 'Aria 1'
 # BRAKET_DEVICE = 'Harmony'
@@ -80,29 +81,29 @@ def calculate_statistics(backend, jobs_ids, file_name='message.txt'):
             file1.close()
         else:
             job = backend.retrieve_job(job_id)
-            status = job.status()
-            now = datetime.now()
-            current_time = now.strftime("%H:%M:%S")
-            file1 = open(file_name, "a")
-            file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
-            file1.writelines(["Current Status:", str(status), '\n\n'])
-            file1.close()
-            print("Current Time =", current_time)
-            print('Current Status:', status)
-            print()
-            DONE = status.DONE
-            while status != DONE:
-                time.sleep(3600)
-                now = datetime.now()
-                current_time = now.strftime("%H:%M:%S")
-                status = job.status()
-                file1 = open(file_name, "a")
-                file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
-                file1.writelines(["Current Status:", str(status), '\n\n'])
-                file1.close()
-                print("Current Time =", current_time)
-                print('Status:', status)
-                print()
+            # status = job.status()
+            # now = datetime.now()
+            # current_time = now.strftime("%H:%M:%S")
+            # file1 = open(file_name, "a")
+            # file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
+            # file1.writelines(["Current Status:", str(status), '\n\n'])
+            # file1.close()
+            # print("Current Time =", current_time)
+            # print('Current Status:', status)
+            # print()
+            # DONE = status.DONE
+            # while status != DONE:
+            #     time.sleep(3600)
+            #     now = datetime.now()
+            #     current_time = now.strftime("%H:%M:%S")
+            #     status = job.status()
+            #     file1 = open(file_name, "a")
+            #     file1.writelines(["\nCurrent Time =", str(current_time), '\n'])
+            #     file1.writelines(["Current Status:", str(status), '\n\n'])
+            #     file1.close()
+            #     print("Current Time =", current_time)
+            #     print('Status:', status)
+            #     print()
             # while not is_result_availble():
             #     # block for a moment
             #     sleep(1)

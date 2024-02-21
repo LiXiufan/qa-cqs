@@ -58,7 +58,9 @@ setup(
         'qiskit-ibm-provider',
         'qibo',
         'qibojit',
-        'cvxopt'
+        'cvxopt',
+        'qiskit-ibm-provider',
+        'qiskit-braket-provider'
     ],
     python_requires='>=3.8, <3.11',
     packages=find_packages(),
