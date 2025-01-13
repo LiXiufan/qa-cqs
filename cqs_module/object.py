@@ -25,318 +25,272 @@
     First, it has the generator of the linear systems of equations problem.
 """
 
-from typing import List, Tuple, Dict
-from numpy import array, ndarray, random
+from numpy import array, ndarray, zeros
+from numpy import abs as np_abs
+from numpy import sum as np_sum
+from random import choice, random
 from Error import ArgumentError
 from cqs_module.verifier import get_unitary
-
-import time
-from datetime import datetime
-
-import numpy as np
-from typing import Union, Tuple, Dict
-from qiskit import QuantumCircuit, QuantumRegister, execute, Aer
-from qiskit.quantum_info import Statevector
-from qiskit.providers import JobStatus
-import logging
-
+from typing import List
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit.circuit.random import random_circuit
+from qiskit.quantum_info import Operator
 
 __all__ = [
-    "CoeffMatrix",
-    "InnerProduct"
+    "Instance",
+    "RandomInstance"
 ]
 
 ModuleErrorCode = 1
 FileErrorCode = 0
 
 
-class CoeffMatrix:
-    r"""Set the ``A`` matrix.
+class Instance:
+    r"""Set the A matrix and unitary for b.
 
-    This class generates the coefficient matrix A of the linear system of equations with the intrinsic forms.
-    It returns the unitaries, coefficients, and matrix.
+    This class generates the coefficient matrix A and unitary b of the linear system of equations
+    according to the corresponding inputs.
     Users can also customize the A matrix with specific input.
     """
 
-    def __init__(self, term_number, dim, width):
-        r"""Set the ``A`` matrix.
+    def __init__(self, n, K):
+        r"""Set the A matrix and unitary for b.
 
-        This class generates A matrix with the intrinsic forms.
-        It returns the unitaries, coefficients, and matrix.
+        This class generates the coefficient matrix A and unitary b of the linear system of equations
+        according to the corresponding inputs.
         Users can also customize the A matrix with specific input.
+
+        Args:
+            n (int): qubit number
+            K (int): number of decomposition terms
         """
-
-        self.__which_form = None
-        self.__unitary = None  # unitaries
+        self.__which_type = None
+        self.__unitaries = None  # unitaries
+        self.__ub = None
         self.__matrix = None  # matrix
-        self.__coeff = None  # coefficients of the unitaries
-        self.__term_number = term_number
-        self.__dim = dim
-        # self.__width = int(log2(self.__dim))
-        self.__width = width
+        self.__coeffs = None  # coefficients
+        self.__num_term = K
+        self.__num_qubit = n
+        self.__dim = 2 ** n
 
-    def generate(self, which_form=None, given_matrix=None, given_unitaries=None, given_coeffs=None):
+    def generate(self, given_coeffs=None, given_unitaries=None, given_ub=None):
         r"""Automatically generate a random matrix with the given intrinsic forms.
 
         Args:
-            which_form (string, optional): choose the form to generate a matrix
-            given_matrix (ndarray): customize a matrix by inputting its matrix
+            given_coeffs (List): a list of coefficients
+            given_unitaries (List): a list of unitaries
+            given_ub (List): a unitary that corresponds to the state |b>
         """
-        if which_form is None:
-            which_form = "Pauli"
+        # Use given input coefficients and unitaries
+        self.__coeffs = given_coeffs
+        self.__unitaries = given_unitaries
+        self.__ub = given_ub
 
-        if which_form == 'Matrix':
-            if given_matrix is not None:
-                if isinstance(given_matrix, ndarray):
-                    self.__matrix = given_matrix
+    def get_unitaries(self):
+        return self.__unitaries
 
-                else:
-                    raise ArgumentError(
-                        f"Invalid matrix input ({given_matrix}) with the type: `{type(given_matrix)}`!\n"
-                        "Only `ndarray` is supported as the type of the matrix.",
-                        ModuleErrorCode,
-                        FileErrorCode, 2)
+    def get_coeffs(self):
+        return self.__coeffs
 
-        if which_form == 'Pauli':
-            self.__coeff = [(random.rand() * 2 - 1) for _ in range(self.__term_number)]
-            self.__unitary = []
+    def get_num_qubit(self):
+        return self.__num_qubit
 
-            # Tensor product of Pauli stings
-            for i in range(self.__term_number):
-                paulis = [[]]
-                for j in range(self.__width):
-                    paulis[0].append(random.choice(['I', 'X', 'Y', 'Z']))
-                self.__unitary.append(paulis)
+    def get_ub(self):
+        return self.__ub
 
-        elif which_form == 'Unitaries':
-            self.__coeff = given_coeffs
-            self.__unitary = given_unitaries
-
-        elif which_form == 'Haar':
-            self.__coeff = [(random.rand() * 2) for _ in range(self.__term_number)]
-            self.__unitary = []
-            for i in range(self.__term_number):
-                Haar_unitary = [[]]
-        self.__which_form = which_form
-
-    def get_unitary(self):
-        return self.__unitary
-
-    def get_coeff(self):
-        return self.__coeff
-
-    def get_width(self):
-        return self.__width
+    def __calculate_matrix(self):
+        shape = (self.__dim, self.__dim)
+        A_mat = zeros(shape, dtype='complex128')
+        for i in range(self.__num_term):
+            u = self.__unitaries[i]
+            if type(u) is list:
+                u_mat = get_unitary(u)
+            else:
+                u_mat = Operator(u).data
+            c = self.__coeffs[i]
+            A_mat += c * u_mat
+        self.__matrix = A_mat
 
     def get_matrix(self):
-        mat = array([[0 for _ in range(self.__dim)] for _ in range(self.__dim)], dtype='complex128')
-
-        for i in range(self.__term_number):
-            coeff = self.__coeff[i]
-            u = self.__unitary[i]
-            u_mat = get_unitary(u)
-            mat += coeff * u_mat
-
-        self.__matrix = mat
+        self.__calculate_matrix()
         return self.__matrix
 
+class RandomInstance():
+    r"""Set the A matrix and unitary for b.
 
-class InnerProduct():
-    r"""Set the inner product class.
-
-    This class records the inner products used for calculating the auxiliary systems Q and r.
-    In our code implementation, we pseudo-execute all inner products at the first step and
-    record the instances with this class. Then we submitted all instances to compute the inner products
-    and store their values into instances of this class. Then we can obtain the values by indexes.
-
-    Attributes:
-        access (str): different access to the backend
-        b (Union[np.ndarray, QuantumCircuit, Tuple[Dict[int, complex], int]]): quantum circuit for preparing b
-        term_number (int): number of decomposition terms
-        threshold (int): truncated threshold of our algorithm
-        shots (int, optional): number of measurements
+    This class generates the coefficient matrix A and unitary b of the linear system of equations with the intrinsic forms.
+    It returns the unitaries, coefficients, and matrix.
+    Users can also customize the A matrix with specific input and properties such as invertibility.
     """
 
-    def __init__(self, access: str, b: Union[np.ndarray, QuantumCircuit, Tuple[Dict[int, complex], int]],
-                 term_number: int, threshold: int, shots: int = 1024):
-        r"""Set the inner product class.
+    def __init__(self, n, K):
+        r"""Set the A matrix and unitary for b.
 
-        This class records the inner products used for calculating the auxiliary systems Q and r.
-        In our code implementation, we pseudo-execute all inner products at the first step and
-        record the instances with this class. Then we submitted all instances to compute the inner products
-        and store their values into instances of this class. Then we can obtain the values by indexes.
+        This class generates the coefficient matrix A and unitary b of the linear system of equations with the intrinsic forms.
+        It returns the unitaries, coefficients, and matrix.
+        Users can also customize the A matrix with specific input and properties such as invertibility.
 
         Args:
-            access (str): different access to the backend
-            b (Union[np.ndarray, QuantumCircuit, Tuple[Dict[int, complex], int]]): quantum circuit for preparing b
-            term_number (int): number of decomposition terms
-            threshold (int): truncation threshold of our algorithm
-            shots (int, optional): number of measurements
+            n (int): qubit number
+            K (int): number of decomposition terms
         """
-        self.access = access
-        self.shots = shots
-        self.b = b
-        self.pos_inner_product_real = np.empty(self.power, dtype=np.float64)
-        self.pos_inner_product_imag = np.empty(self.power, dtype=np.float64)
-        self.neg_inner_product_real = np.empty(self.power, dtype=np.float64)
-        self.neg_inner_product_imag = np.empty(self.power, dtype=np.float64)
-        self.non_q = ["true", "sample", "sparse"]
-        if self.access not in self.non_q:
-            self.backend = get_backend(self.access)
+        self.__which_type = None
+        self.__unitaries = None  # unitaries
+        self.__ub = None
+        self.__matrix = None  # matrix
+        self.__coeffs = None  # coefficients
+        self.__num_term = K
+        self.__num_qubit = n
+        self.__dim = 2 ** n
 
+    def __generate_random_Pauli(self):
+        # Tensor product of Pauli stings
+        while True:
+            random_Pauli = [[]]
+            for j in range(self.__num_qubit):
+                random_Pauli[0].append(choice(['I', 'X', 'Y', 'Z']))
+            counter = 0
+            for p in random_Pauli[0]:
+                if p in ['I', 'Z']:
+                    counter += 1
+            if 0 <= counter < len(random_Pauli[0]):
+                break
+        return random_Pauli
 
+    def __Pauli_to_gate(self, u):
+        qr = QuantumRegister(self.__num_qubit, 'q')
+        cr = ClassicalRegister(self.__num_qubit, 'c')
+        cir = QuantumCircuit(qr, cr)
+        for i, p in enumerate(u[0]):
+            if p == 'I':
+                cir.id(qr[i])
+            elif p == 'X':
+                cir.x(qr[i])
+            elif p == 'Y':
+                cir.y(qr[i])
+            elif p == 'Z':
+                cir.z(qr[i])
+            else:
+                raise ValueError
+        return cir
 
+    def __calculate_matrix_pre(self):
+        shape = (self.__dim, self.__dim)
+        A_mat_pre = zeros(shape, dtype='complex128')
+        for i in range(self.__num_term - 1):
+            u = self.__unitaries[i]
+            if type(u) is list:
+                u_mat = get_unitary(u)
+            else:
+                u_mat = Operator(u).data
+            c = self.__coeffs[i]
+            A_mat_pre += c * u_mat
+        return A_mat_pre
 
+    def __calculate_diagonal_pre(self, A_mat_pre):
+        diag_pre_max = max(np_sum(np_abs(A_mat_pre), axis=1)) + 1
+        return diag_pre_max
 
+    def __generate_identity(self):
+        A_mat_pre = self.__calculate_matrix_pre()
+        diag_pre_max = self.__calculate_diagonal_pre(A_mat_pre)
+        self.__coeffs.append(diag_pre_max)
+        self.__coeffs = self.__coeffs / diag_pre_max
+        if self.__which_type in ['Pauli_eigens', 'Pauli_gates']:
+            self.__unitaries.append([['I' for _ in range(self.__num_qubit)]])
+        elif self.__which_type in ['Haar']:
+            self.__unitaries.append(self.__Pauli_to_gate([['I' for _ in range(self.__num_qubit)]]))
 
+    def __generate_random_unitary(self):
+        return [random_circuit(self.__num_qubit, self.__num_qubit, measure=False) for _ in range(self.__num_term - 1)]
 
+    def generate(self, which_type=None, given_ub=None):
+        r"""Automatically generate a random matrix with the given intrinsic forms.
 
+        Args:
+            which_type(string, optional): choose the form to generate a matrix.
+                                        If None, "Pauli_eigens" will be set as default;
+            given_ub (optional): a unitary that corresponds to the state |b>.
+                                        If None, a randomized ub will be set as default;
+        """
+        if which_type is None:
+            self.__which_type = "Pauli_eigens"
+        else:
+            self.__which_type = which_type
 
-        # self._calculate_inner_product()
+        if self.__which_type == 'Pauli_eigens':
+            # We further make sure that the created matrix A is Hermitian and invertible
+            self.__coeffs = [(random() * 2 - 1) for _ in range(self.__num_term - 1)]
+            self.__unitaries = []
+            for i in range(self.__num_term - 1):
+                random_Pauli = self.__generate_random_Pauli()
+                self.__unitaries.append(random_Pauli)
+            self.__generate_identity()
+            if given_ub is None:
+                self.__ub = self.__generate_random_Pauli()
+            else:
+                assert type(given_ub) is list
+                self.__ub = given_ub
 
-    # def get_inner_product(self, q_pow: int, imag: bool = False):
-    #     r"""Get the value of an inner product.
-    #
-    #     Args:
-    #         q_pow (int): the power of permutation matrix
-    #         imag (bool, optional): False: calculate the real part;
-    #                                True: calculate the imaginary part
-    #
-    #     Returns:
-    #         float / int: the value of an inner product
-    #     """
-    #     if q_pow == 0 and not imag:
-    #         return 1
-    #     elif q_pow == 0 and imag:
-    #         return 0
-    #     elif q_pow > 0 and not imag:
-    #         return self.pos_inner_product_real[q_pow - 1]
-    #     elif q_pow > 0 and imag:
-    #         return self.pos_inner_product_imag[q_pow - 1]
-    #     elif q_pow < 0 and not imag:
-    #         return self.neg_inner_product_real[-(q_pow) - 1]
-    #     elif q_pow < 0 and imag:
-    #         return self.neg_inner_product_imag[-(q_pow) - 1]
+        elif self.__which_type == 'Pauli_gates':
+            # We further make sure that the created matrix A is Hermitian and invertible
+            self.__coeffs = [(random() * 2 - 1) for _ in range(self.__num_term - 1)]
+            self.__unitaries = []
+            for i in range(self.__num_term - 1):
+                random_Pauli = self.__generate_random_Pauli()
+                self.__unitaries.append(random_Pauli)
+            self.__generate_identity()
+            for i in range(self.__num_term):
+                u = self.__unitaries[i]
+                cir = self.__Pauli_to_gate(u)
+                self.__unitaries[i] = cir
+            if given_ub is None:
+                self.__ub = self.__Pauli_to_gate(self.__generate_random_Pauli())
+            else:
+                assert type(given_ub) is QuantumCircuit
+                self.__ub = given_ub
 
-    # def _calculate_inner_product(self):
-    #     r"""Calculate the inner product according to the access.
-    #
-    #     If the access is "sparse", calculate the inner product using the sparce matrix estimator;
-    #     If the access is "true", calculate the inner product using the matrix multiplication estimator;
-    #     If the access is "sample", calculate the inner product using sampling and querying estimator;
-    #     Else, calculate the inner product using the Hadamard test with backends provided by Qiskit;
-    #     """
-    #     if self.access == "sparse":
-    #         if not isinstance(self.b, tuple):
-    #             raise NotImplementedError("sparse mode is used with input Tuple[Dict[idx, value], size]")
-    #         dict_b, size = self.b
-    #         for i in range(self.power):
-    #             self.pos_inner_product_real[i], self.pos_inner_product_imag[i] = sparse_inner_product(dict_b, i + 1,
-    #                                                                                                   size)
-    #             self.neg_inner_product_real[i], self.neg_inner_product_imag[i] = sparse_inner_product(dict_b, -(i + 1),
-    #                                                                                                   size)
-    #     elif self.access == "true" or self.access == "sample":
-    #         if isinstance(self.b, np.ndarray):
-    #             vec_b = self.b
-    #         else:
-    #             if isinstance(self.b, QuantumCircuit):
-    #                 sim = Aer.get_backend('unitary_simulator')
-    #                 job = execute(self.b, sim)
-    #                 result = job.result()
-    #                 mat = result.get_unitary(self.b, decimals=16)
-    #                 vec_b = np.transpose(mat)[0]
-    #         if self.access == "true":
-    #             for i in range(self.power):
-    #                 self.pos_inner_product_real[i], self.pos_inner_product_imag[i] = true_inner_product(vec_b, i + 1)
-    #                 self.neg_inner_product_real[i], self.neg_inner_product_imag[i] = true_inner_product(vec_b, -(i + 1))
-    #         elif self.access == "sample":
-    #             for i in range(self.power):
-    #                 self.pos_inner_product_real[i], self.pos_inner_product_imag[i] = sample_inner_product(vec_b, i + 1,
-    #                                                                                                       self.shots)
-    #                 self.neg_inner_product_real[i], self.neg_inner_product_imag[i] = sample_inner_product(vec_b,
-    #                                                                                                       -(i + 1),
-    #                                                                                                       self.shots)
-    #     else:
-    #         if isinstance(self.b, np.ndarray):
-    #             width = int(np.log2(self.b.size))
-    #             q_b = QuantumRegister(width, 'q')
-    #             q_b_cir = QuantumCircuit(q_b)
-    #             U_b = q_b_cir.prepare_state(state=Statevector(self.b)).instructions[0]
-    #         else:
-    #             U_b = self.b.to_gate()
-    #             width = U_b.num_qubits
-    #         promise_queue = []
-    #         pr = []
-    #         pi = []
-    #         nr = []
-    #         ni = []
-    #         for i in range(self.power):
-    #             pos_real = quantum_inner_product_promise(U_b, width, self.backend, i + 1, shots=self.shots, imag=False)
-    #             pos_imag = quantum_inner_product_promise(U_b, width, self.backend, i + 1, shots=self.shots, imag=True)
-    #             neg_real = quantum_inner_product_promise(U_b, width, self.backend, -(i + 1), shots=self.shots,
-    #                                                      imag=False)
-    #             neg_imag = quantum_inner_product_promise(U_b, width, self.backend, -(i + 1), shots=self.shots,
-    #                                                      imag=True)
-    #             promise_queue.append(pos_real)
-    #             promise_queue.append(pos_imag)
-    #             promise_queue.append(neg_real)
-    #             promise_queue.append(neg_imag)
-    #             pr.append(pos_real)
-    #             pi.append(pos_imag)
-    #             nr.append(neg_real)
-    #             ni.append(neg_imag)
-    #
-    #         start = datetime.now()
-    #         logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.WARNING,
-    #                             handlers=[logging.FileHandler(f"queue_{start.strftime('%Y%m%d%H%M%S')}.log"),
-    #                                       logging.StreamHandler()])
-    #         logging.warning(f"access: {self.access}, shots: {self.shots}, power:{self.power}")
-    #         time.sleep(self.power * 0.1)
-    #         counter = len(promise_queue)
-    #         while len(promise_queue) > 0:
-    #             job = promise_queue.pop()
-    #             status = job.status()
-    #             counter -= 1
-    #             if status == JobStatus.ERROR:
-    #                 raise RuntimeError("Job failed.")
-    #             elif status == JobStatus.CANCELLED:
-    #                 raise RuntimeError("Job cancelled.")
-    #             elif status == JobStatus.DONE:
-    #                 logging.warning(f'Remaining jobs:{len(promise_queue)}')
-    #                 counter = len(promise_queue)
-    #             else:
-    #                 promise_queue.append(job)
-    #                 if counter == 0:
-    #                     counter = len(promise_queue)
-    #                     logging.warning('Waiting time: {:.2f} hours'.format((datetime.now() - start).seconds / 3600.0))
-    #                     time.sleep(60 * 15)
-    #         logging.warning('Queue cleared; total time: {:.2f} hours'.format((datetime.now() - start).seconds / 3600.0))
-    #         for i in range(self.power):
-    #             self.pos_inner_product_real[i] = eval_promise(pr[i])
-    #             self.pos_inner_product_imag[i] = -eval_promise(pi[i])
-    #             self.neg_inner_product_real[i] = eval_promise(nr[i])
-    #             self.neg_inner_product_imag[i] = -eval_promise(ni[i])
+        elif self.__which_type == 'Haar':
+            self.__coeffs = [(random() * 2 - 1) for _ in range(self.__num_term - 1)]
+            self.__unitaries = self.__generate_random_unitary()
+            self.__generate_identity()
+            if given_ub is None:
+                self.__ub = random_circuit(self.__num_qubit, self.__num_qubit, measure=False)
+            else:
+                assert type(given_ub) is QuantumCircuit
+                self.__ub = given_ub
+        else:
+            raise ValueError
 
+    def get_unitaries(self):
+        return self.__unitaries
 
+    def get_coeffs(self):
+        return self.__coeffs
 
+    def get_num_qubit(self):
+        return self.__num_qubit
 
-########################################################################################################################
+    def get_input_type(self):
+        return self.__which_type
 
+    def get_ub(self):
+        return self.__ub
 
-# if not {which_form}.issubset(['Pauli', 'Haar']):
-#     raise ArgumentError(f"Invalid form: ({which_form})!\n"
-#                         "Only 'Pauli' and 'Haar' are supported as the "
-#                         "forms to generate the matrix. If you want to customize "
-#                         "it, please input the matrix with parameter 'given_matrix'.",
-#                         ModuleErrorCode,
-#                         FileErrorCode, 1)
+    def __calculate_matrix(self):
+        shape = (self.__dim, self.__dim)
+        A_mat = zeros(shape, dtype='complex128')
+        for i in range(self.__num_term):
+            u = self.__unitaries[i]
+            if type(u) is list:
+                u_mat = get_unitary(u)
+            else:
+                u_mat = Operator(u).data
+            c = self.__coeffs[i]
+            A_mat += c * u_mat
+        self.__matrix = A_mat
 
-# if which_form == 'Pauli':
-#     # Coefficients are sampled in [-2, 2] with uniform distribution
-#     # self.__coeff = [(random.rand() * 4 - 2) for _ in range(self.__term_number)]
-#     # self.__coeff = [1 for _ in range(int(self.__term_number / 2))] + [-1 for _ in range(int(self.__term_number / 2))]
-#     # if len(self.__coeff) != self.__term_number:
-#     #     self.__coeff += [random.choice([-1, 1])]
-#     self.__coeff = [(random.rand() * 2 - 1) for _ in range(self.__term_number)]
-#     # self.__coeff = [(random.rand() * 2) for _ in range(self.__term_number)]
-#     # self.__coeff = random.normal(0, 2, self.__term_number)
+    def get_matrix(self):
+        self.__calculate_matrix()
+        return self.__matrix
+

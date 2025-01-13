@@ -72,7 +72,7 @@ def minus_state():
 def gate_to_matrix(gate):
     if gate == 'I':
         u = I_mat()
-    if gate == 'X':
+    elif gate == 'X':
         u = X_mat()
     elif gate == 'Y':
         u = Y_mat()

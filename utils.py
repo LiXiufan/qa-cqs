@@ -31,7 +31,6 @@ from numpy import matmul as mat
 from Error import ArgumentError
 from networkx import Graph, spring_layout, draw_networkx
 
-
 import matplotlib.pyplot as plt
 
 __all__ = [

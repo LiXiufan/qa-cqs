@@ -39,30 +39,25 @@ setup(
     version=SDK_VERSION,
     install_requires=[
         # PySDK
-        'numpy>=1.17.3',
-        'requests>=2.28.0',
-        'bidict>=0.22.0',
-        'websocket-client>=1.3.2',
+        'numpy',
+        'requests',
+        'bidict',
+        'websocket-client',
 
         # Example
-        'scipy>=1.8.0',
-        'matplotlib>=3.3.0',
+        'scipy',
+        'matplotlib',
         'networkx',
-        'sympy>=1.10.1',
+        'sympy',
 
         # Hardware
-        'qiskit>=0.41.0',
-        'qiskit-terra>=0.17.4',
-        'qiskit-ionq',
+        'qiskit',
         'qiskit-ibm-runtime',
         'qiskit-ibm-provider',
         'qibo',
-        'qibojit',
         'cvxopt',
-        'qiskit-ibm-provider',
         'qiskit-braket-provider'
     ],
-    python_requires='>=3.8, <3.11',
     packages=find_packages(),
     license='Apache License 2.0',
     author='Xiufan Li',
