@@ -26,7 +26,7 @@
     This matrix is positive definite and thus invertible, making us easier for analysis.
 """
 
-from cqs_module.object import Instance, RandomInstance
+from cqs.object import Instance, RandomInstance
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 
 # First type of generation: given coefficients, given unitary, given ub.

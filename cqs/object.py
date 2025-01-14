@@ -25,14 +25,14 @@
     First, it has the generator of the linear systems of equations problem.
 """
 
-from numpy import array, ndarray, zeros
+from numpy import zeros
 from numpy import abs as np_abs
 from numpy import sum as np_sum
 from random import choice, random
 from Error import ArgumentError
-from cqs_module.verifier import get_unitary
+from cqs.verifier import get_unitary
 from typing import List
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
 from qiskit.quantum_info import Operator
 

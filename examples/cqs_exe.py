@@ -24,11 +24,11 @@
     Execution of the program.
 """
 
-from cqs_module.object import CoeffMatrix
+from cqs.object import CoeffMatrix
 from numpy import real, array
-from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
-from cqs_module.expansion import expand_ansatz_tree
+from cqs.optimization import solve_combination_parameters
+from cqs.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
+from cqs.expansion import expand_ansatz_tree
 
 import matplotlib.pyplot as plt
 

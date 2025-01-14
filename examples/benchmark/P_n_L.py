@@ -18,27 +18,23 @@
 # For feedback, please contact Xiufan at: shenlongtianwu8@gmail.com.
 ########################################################################################################################
 
-
 # !/usr/bin/env python3
 
 """
-    This is the matrix calculation for Hadamard test.
+    Benchmark problem sizes and algorithm scalability.
 """
+from cqs.object import RandomInstance
+from random import choice
+nList = list(range(2, 10))
+KList = list(range(2, 10))
 
-from numpy import kron, conj, transpose, real, imag
-from cqs.verifier import get_unitary, zero_state
-def Hadmard_test(U, alpha=1):
-    U_mat = get_unitary(U)
-    width = len(U[0])
-    zeros = zero_state()
-    if width > 1:
-        for j in range(width - 1):
-            zeros = kron(zeros, zero_state())
+n = choice(nList)
+K = choice(KList)
+Instance1 = RandomInstance(n, K)
+Instance1.generate()
 
-    ideal = (conj(transpose(zeros)) @ U_mat @ zeros).item()
-    if alpha == 1:
-        return real(ideal)
-    elif alpha == 1j:
-        return imag(ideal)
-    else:
-        raise ValueError("The alpha should be either 1 or 1j.")
+
+
+
+
+

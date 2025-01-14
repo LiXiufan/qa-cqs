@@ -18,27 +18,20 @@
 # For feedback, please contact Xiufan at: shenlongtianwu8@gmail.com.
 ########################################################################################################################
 
-
 # !/usr/bin/env python3
 
 """
-    This is the matrix calculation for Hadamard test.
+    Test the shot frugal method for the summation of different expectations obtained by Hadamard tests.
+    H = \sum_{k=1}^{K} \beta_k U_k
+    Goal: Estimate the <b|H|b> with a limited number of shots.
+
+    Assume: all betas are in [-1, 1]
 """
+from estimate import main
 
-from numpy import kron, conj, transpose, real, imag
-from cqs.verifier import get_unitary, zero_state
-def Hadmard_test(U, alpha=1):
-    U_mat = get_unitary(U)
-    width = len(U[0])
-    zeros = zero_state()
-    if width > 1:
-        for j in range(width - 1):
-            zeros = kron(zeros, zero_state())
+NRANGE = list(range(5, 11))
+SHOTS = 10200
+SAMPLE = 200
+FILE = 'shotfrugalData.txt'
+main(NRANGE, SHOTS, SAMPLE, FILE)
 
-    ideal = (conj(transpose(zeros)) @ U_mat @ zeros).item()
-    if alpha == 1:
-        return real(ideal)
-    elif alpha == 1j:
-        return imag(ideal)
-    else:
-        raise ValueError("The alpha should be either 1 or 1j.")

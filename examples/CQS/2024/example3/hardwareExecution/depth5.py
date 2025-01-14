@@ -25,11 +25,11 @@
     An example of customized linear systems of equations.
 """
 
-from cqs_module.object import CoeffMatrix
+from cqs.object import CoeffMatrix
 from numpy import array
-from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test
-from cqs_module.verifier import get_unitary
+from cqs.optimization import solve_combination_parameters
+from cqs.calculation import calculate_Q_r_by_Hadamrd_test
+from cqs.verifier import get_unitary
 
 qubit_number = 5
 dim = 2 ** qubit_number

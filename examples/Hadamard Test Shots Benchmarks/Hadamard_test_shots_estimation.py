@@ -27,7 +27,7 @@
 
 
 from hardware.Qibo.qibo_access import Hadamard_test
-from cqs_module.calculation import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
+from cqs.calculation import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
 from numpy import kron, conj, transpose, log10, sqrt
 from numpy import linalg
 

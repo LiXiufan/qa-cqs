@@ -33,7 +33,7 @@ from numpy import real, imag
 from numpy import conj
 
 from hardware.execute import Hadamard_test
-from qiskit_ionq import IonQProvider
+# from qiskit_ionq import IonQProvider
 from qiskit_braket_provider import AWSBraketProvider
 import time
 from datetime import datetime

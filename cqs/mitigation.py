@@ -21,24 +21,22 @@
 
 # !/usr/bin/env python3
 
-"""
-    This is the matrix calculation for Hadamard test.
-"""
 
-from numpy import kron, conj, transpose, real, imag
-from cqs.verifier import get_unitary, zero_state
-def Hadmard_test(U, alpha=1):
-    U_mat = get_unitary(U)
-    width = len(U[0])
-    zeros = zero_state()
-    if width > 1:
-        for j in range(width - 1):
-            zeros = kron(zeros, zero_state())
 
-    ideal = (conj(transpose(zeros)) @ U_mat @ zeros).item()
-    if alpha == 1:
-        return real(ideal)
-    elif alpha == 1j:
-        return imag(ideal)
-    else:
-        raise ValueError("The alpha should be either 1 or 1j.")
+def Richardson_extrapolate(Shots, Unmiti):
+    exp_mtg = 0
+    length = len(Shots)
+    for m in range(length):
+        exp_obs = Unmiti[m]
+        shot_m = Shots[m]
+        multiplication = 1
+        for k in range(length):
+            if k == m:
+                continue
+            else:
+                shot_k = Shots[k]
+                # multiplication *= (shot_m ** 0.5) / (shot_m ** 0.5 - shot_k ** 0.5)
+                multiplication *= (shot_m) / (shot_m - shot_k)
+
+        exp_mtg += exp_obs * multiplication
+    return exp_mtg

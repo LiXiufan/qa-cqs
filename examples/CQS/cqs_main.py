@@ -24,12 +24,12 @@
     Execution of the program.
 """
 
-from cqs_module.object import CoeffMatrix
+from cqs.object import CoeffMatrix
 from numpy import real, array
-from cqs_module.optimization import solve_combination_parameters
-from cqs_module.calculation import calculate_Q_r_by_Hadamrd_test
-from cqs_module.expansion import expand_ansatz_tree
-from cqs_module.verifier import get_unitary
+from cqs.optimization import solve_combination_parameters
+from cqs.calculation import calculate_Q_r_by_Hadamrd_test
+from cqs.expansion import expand_ansatz_tree
+from cqs.verifier import get_unitary
 from numpy import linalg, log
 
 import matplotlib.pyplot as plt
