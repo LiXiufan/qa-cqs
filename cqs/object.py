@@ -95,6 +95,9 @@ class Instance:
     def get_num_qubit(self):
         return self.__num_qubit
 
+    def get_num_term(self):
+        return self.__num_term
+
     def get_ub(self):
         return self.__ub
 

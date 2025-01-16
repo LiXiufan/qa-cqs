@@ -21,7 +21,7 @@
 # !/usr/bin/env python3
 
 """
-    Access to the pre-known calculator.
+    Access to the pre-known calculator based on Pauli eigenvalues.
 """
 
 from numpy import real, imag

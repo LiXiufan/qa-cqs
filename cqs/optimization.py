@@ -38,7 +38,7 @@ from cvxopt import matrix
 from cvxopt.solvers import qp
 from numpy import linalg, array, diag, multiply, real, imag
 from numpy import array, ndarray
-from numpy import transpose, conj
+from numpy import transpose, matmul
 from sympy import Matrix
 from typing import List, Tuple
 
@@ -112,13 +112,7 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
     Q_array = array(Q / 2)
     r_array = array(r / (-2)).reshape(-1, 1)
     loss = abs(
-        (transpose(params_array) @ Q_array @ params_array - 2 * transpose(r_array) @ params_array + 1).item())
-
-
+        (matmul(matmul(transpose(params_array), Q_array), params_array) - 2 * matmul(transpose(r_array), params_array) + 1).item())
     # Calculate Hamiltonian loss fucntion
-
-
-
-
-
+    # loss = abs((transpose(params_array) @ Q_array @ params_array - (transpose(params_array) @ r_array) * transpose(r_array) @ params_array).item())
     return loss, vars

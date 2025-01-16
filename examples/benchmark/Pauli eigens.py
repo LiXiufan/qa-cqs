@@ -30,8 +30,23 @@ KList = list(range(2, 10))
 
 n = choice(nList)
 K = choice(KList)
-Instance1 = RandomInstance(n, K)
-Instance1.generate()
+instance1 = RandomInstance(n, K)
+instance1.generate()
+coeffs = instance1.get_coeffs()
+unitaries = instance1.get_unitaries()
+ub = instance1.get_ub()
+# problem statement
+print("Coefficients are:", coeffs)
+print("Unitaries are:", unitaries)
+print("Vector b is:", ub)
+
+
+
+
+
+
+
+
 
 
 
