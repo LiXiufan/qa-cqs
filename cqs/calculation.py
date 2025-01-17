@@ -33,12 +33,14 @@ from numpy import real, imag
 from numpy import conj
 
 from hardware.execute import Hadamard_test
-# from qiskit_ionq import IonQProvider
-from qiskit_braket_provider import AWSBraketProvider
-import time
-from datetime import datetime
 
-BRAKET_DEVICE = 'SV1'
+
+# from qiskit_ionq import IonQProvider
+# from qiskit_braket_provider import AWSBraketProvider
+# import time
+# from datetime import datetime
+
+# BRAKET_DEVICE = 'SV1'
 # BRAKET_DEVICE = 'Aria 1'
 # BRAKET_DEVICE = 'Harmony'
 
@@ -46,594 +48,428 @@ def U_list_dagger(U):
     return U[::-1]
 
 
+def calculate_Q_r_by_eigens(instance, ansatz_tree, loss_type=None):
+    """
+        Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
+        But our objective function is:                                         z^T Q z  - 2 r^T z + 1
+        So the coefficients are corrected here.
 
-def submit_tasks_braket(instance, ansatz_tree, shot_frugal=None):
-    if shot_frugal is None:
-        shots = 1000
+    :param R:
+    :param I:
+    :param q:
+    :return: Q, r
+    """
     coeffs = instance.get_coeffs()
     unitaries = instance.get_unitaries()
+    n = instance.get_num_qubit()
     num_term = instance.get_num_term()
     tree_depth = len(ansatz_tree)
     V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
-
-    provider = AWSBraketProvider()
-    simulator_backend = provider.get_backend(BRAKET_DEVICE)
-
-    Job_ids_K_R = []
-    Job_ids_K_I = []
-    Job_ids_q_R = []
-    Job_ids_q_I = []
-
     for i in range(tree_depth):
         for j in range(tree_depth):
+            item = 0
             for k in range(num_term):
                 for l in range(num_term):
-                    u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(unitaries[k]) + unitaries[l] + \
-                        ansatz_tree[j]
-                    jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    file1 = open(file_name, "a")
-                    file1.writelines(["jobid u_K, real:", str(jobid_R), '\n'])
-                    file1.writelines(["jobid u_K, imag:", str(jobid_I), '\n'])
-                    file1.close()
-                    Job_ids_K_R.append(jobid_R)
-                    Job_ids_K_I.append(jobid_I)
-
-    for i in range(tree_depth):
-        for k in range(A_terms_number):
-            u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-            shots = P_A[k]
-            shots = 400
-            jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                          tasks_num=tasks_num, shots_num=shots_num)
-            jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                          tasks_num=tasks_num, shots_num=shots_num)
-            file1 = open(file_name, "a")
-            file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-            file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-            file1.close()
-            Job_ids_q_R.append(jobid_R)
-            Job_ids_q_I.append(jobid_I)
-
-    exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
-    exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
-    exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
-    exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
-
-    Job_ids_regterm_R = []
-    Job_ids_regterm_I = []
-
-    if loss_type == 'l2reg':
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                shots = 400
-                jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                file1 = open(file_name, "a")
-                file1.writelines(["jobid u_reg, real:", str(jobid_R), '\n'])
-                file1.writelines(["jobid u_reg, imag:", str(jobid_I), '\n'])
-                file1.close()
-                Job_ids_regterm_R.append(jobid_R)
-                Job_ids_regterm_I.append(jobid_I)
-        exp_reg_R = calculate_statistics(simulator_backend, Job_ids_regterm_R, file_name=file_name)
-        exp_reg_I = calculate_statistics(simulator_backend, Job_ids_regterm_I, file_name=file_name)
-
-    if loss_type == 'hamiltonian':
-        for i in range(tree_depth):
-            for k in range(A_terms_number):
-                u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                shots = P_A[k]
-                shots = 400
-                jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                file1 = open(file_name, "a")
-                file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-                file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-                file1.close()
-                Job_ids_q_R.append(jobid_R)
-                Job_ids_q_I.append(jobid_I)
-
-    for i in range(tree_depth):
-        for j in range(tree_depth):
-            # Uniform distribution of the shots
-            item = 0
-            for k in range(A_terms_number):
-                for l in range(A_terms_number):
-                    inner_product_real = exp_K_R[i * tree_depth * A_terms_number * A_terms_number +
-                                                 j * A_terms_number * A_terms_number +
-                                                 k * A_terms_number +
-                                                 l]
-                    inner_product_imag = exp_K_I[i * tree_depth * A_terms_number * A_terms_number +
-                                                 j * A_terms_number * A_terms_number +
-                                                 k * A_terms_number +
-                                                 l]
-                    inner_product = inner_product_real - inner_product_imag * 1j
-                    item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
+                    U1 = unitaries[k] + ansatz_tree[i]
+                    U2 = unitaries[l] + ansatz_tree[j]
+                    inner_product = Hadamard_test(n, U1, U2, real=None, backend='eigens', shots=None, device=None)
+                    item += conj(coeffs[k]) * coeffs[l] * inner_product
             if loss_type == 'l2reg':
-                inner_product_real = exp_reg_R[i * tree_depth + j]
-                inner_product_imag = exp_reg_I[i * tree_depth + j]
-                inner_product = inner_product_real - inner_product_imag * 1j
+                U1 = ansatz_tree[i]
+                U2 = ansatz_tree[j]
+                inner_product = Hadamard_test(n, U1, U2, real=None, backend='eigens', shots=None, device=None)
                 item += 0.5 * inner_product
             V_dagger_V[i][j] = item
-
-    R = real(V_dagger_V)
-    I = imag(V_dagger_V)
+    Vr = real(V_dagger_V)
+    Vi = imag(V_dagger_V)
 
     q = zeros((tree_depth, 1), dtype='complex128')
     for i in range(tree_depth):
         item = 0
-        for k in range(A_terms_number):
-            inner_product_real = exp_q_R[i * A_terms_number + k]
-            inner_product_imag = exp_q_I[i * A_terms_number + k]
-            inner_product = inner_product_real - inner_product_imag * 1j
-            item += conj(A_coeffs[k]) * inner_product
+        for k in range(num_term):
+            U1 = unitaries[k] + ansatz_tree[i]
+            U2 = [['I' for _ in range(n)]]
+            inner_product = Hadamard_test(n, U1, U2, real=None, backend='eigens', shots=None, device=None)
+            item += conj(coeffs[k]) * inner_product
         q[i][0] = item
+    qr = real(q)
+    qi = imag(q)
 
+    # Q = R  - I
+    #     I   R
+    Q = array(append(append(Vr, -Vi, axis=1), append(Vi, Vr, axis=1), axis=0), dtype='float64')
+    # r = Re(q)
+    #     Im(q)
+    r = array(append(qr, qi, axis=0), dtype='float64')
+    return Q, r
 
-    id_list = []
-
-    return id_list
+# def submit_tasks_braket(instance, ansatz_tree, shot_frugal=None):
+#     if shot_frugal is None:
+#         shots = 1000
+#     coeffs = instance.get_coeffs()
+#     unitaries = instance.get_unitaries()
+#     num_term = instance.get_num_term()
+#     tree_depth = len(ansatz_tree)
+#     V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
+#
+#     provider = AWSBraketProvider()
+#     simulator_backend = provider.get_backend(BRAKET_DEVICE)
+#
+#     Job_ids_K_R = []
+#     Job_ids_K_I = []
+#     Job_ids_q_R = []
+#     Job_ids_q_I = []
+#
+#     for i in range(tree_depth):
+#         for j in range(tree_depth):
+#             for k in range(num_term):
+#                 for l in range(num_term):
+#                     u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(unitaries[k]) + unitaries[l] + \
+#                         ansatz_tree[j]
+#                     jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     file1 = open(file_name, "a")
+#                     file1.writelines(["jobid u_K, real:", str(jobid_R), '\n'])
+#                     file1.writelines(["jobid u_K, imag:", str(jobid_I), '\n'])
+#                     file1.close()
+#                     Job_ids_K_R.append(jobid_R)
+#                     Job_ids_K_I.append(jobid_I)
+#
+#     for i in range(tree_depth):
+#         for k in range(A_terms_number):
+#             u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
+#             shots = P_A[k]
+#             shots = 400
+#             jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                           tasks_num=tasks_num, shots_num=shots_num)
+#             jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                           tasks_num=tasks_num, shots_num=shots_num)
+#             file1 = open(file_name, "a")
+#             file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
+#             file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
+#             file1.close()
+#             Job_ids_q_R.append(jobid_R)
+#             Job_ids_q_I.append(jobid_I)
+#
+#     exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
+#     exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
+#     exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
+#     exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
+#
+#     Job_ids_regterm_R = []
+#     Job_ids_regterm_I = []
+#
+#     if loss_type == 'l2reg':
+#         for i in range(tree_depth):
+#             for j in range(tree_depth):
+#                 u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
+#                 shots = 400
+#                 jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 file1 = open(file_name, "a")
+#                 file1.writelines(["jobid u_reg, real:", str(jobid_R), '\n'])
+#                 file1.writelines(["jobid u_reg, imag:", str(jobid_I), '\n'])
+#                 file1.close()
+#                 Job_ids_regterm_R.append(jobid_R)
+#                 Job_ids_regterm_I.append(jobid_I)
+#         exp_reg_R = calculate_statistics(simulator_backend, Job_ids_regterm_R, file_name=file_name)
+#         exp_reg_I = calculate_statistics(simulator_backend, Job_ids_regterm_I, file_name=file_name)
+#
+#     if loss_type == 'hamiltonian':
+#         for i in range(tree_depth):
+#             for k in range(A_terms_number):
+#                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
+#                 shots = P_A[k]
+#                 shots = 400
+#                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 file1 = open(file_name, "a")
+#                 file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
+#                 file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
+#                 file1.close()
+#                 Job_ids_q_R.append(jobid_R)
+#                 Job_ids_q_I.append(jobid_I)
+#
+#     for i in range(tree_depth):
+#         for j in range(tree_depth):
+#             # Uniform distribution of the shots
+#             item = 0
+#             for k in range(A_terms_number):
+#                 for l in range(A_terms_number):
+#                     inner_product_real = exp_K_R[i * tree_depth * A_terms_number * A_terms_number +
+#                                                  j * A_terms_number * A_terms_number +
+#                                                  k * A_terms_number +
+#                                                  l]
+#                     inner_product_imag = exp_K_I[i * tree_depth * A_terms_number * A_terms_number +
+#                                                  j * A_terms_number * A_terms_number +
+#                                                  k * A_terms_number +
+#                                                  l]
+#                     inner_product = inner_product_real - inner_product_imag * 1j
+#                     item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
+#             if loss_type == 'l2reg':
+#                 inner_product_real = exp_reg_R[i * tree_depth + j]
+#                 inner_product_imag = exp_reg_I[i * tree_depth + j]
+#                 inner_product = inner_product_real - inner_product_imag * 1j
+#                 item += 0.5 * inner_product
+#             V_dagger_V[i][j] = item
+#
+#     R = real(V_dagger_V)
+#     I = imag(V_dagger_V)
+#
+#     q = zeros((tree_depth, 1), dtype='complex128')
+#     for i in range(tree_depth):
+#         item = 0
+#         for k in range(A_terms_number):
+#             inner_product_real = exp_q_R[i * A_terms_number + k]
+#             inner_product_imag = exp_q_I[i * A_terms_number + k]
+#             inner_product = inner_product_real - inner_product_imag * 1j
+#             item += conj(A_coeffs[k]) * inner_product
+#         q[i][0] = item
+#
+#
+#     id_list = []
+#
+#     return id_list
 
 
 # def construct_auxiliary_system():
 
 
-
-
-def calculate_Q_r_by_eigens(instance, ansatz_tree,
-                                  loss_type=None, backend=None,
-                                  shots_budget=1024, frugal=False, file_name='message.txt'):
-    """
-        Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
-        But our objective function is:                                         z^T Q z  - 2 r^T z + 1
-        So the coefficients are corrected here.
-
-    :param R:
-    :param I:
-    :param q:
-    :return: Q, r
-    """
-
-    if backend == 'braket':
-        provider = AWSBraketProvider()
-        simulator_backend = provider.get_backend(BRAKET_DEVICE)
-        Job_ids_K_R = []
-        Job_ids_K_I = []
-        Job_ids_q_R = []
-        Job_ids_q_I = []
-
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                # Uniform distribution of the shots
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
-                            ansatz_tree[j]
-                        shots = P_A_A[k * A_terms_number + l]
-                        shots = 400
-                        jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                      tasks_num=tasks_num, shots_num=shots_num)
-                        jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                      tasks_num=tasks_num, shots_num=shots_num)
-                        file1 = open(file_name, "a")
-                        file1.writelines(["jobid u_K, real:", str(jobid_R), '\n'])
-                        file1.writelines(["jobid u_K, imag:", str(jobid_I), '\n'])
-                        file1.close()
-                        Job_ids_K_R.append(jobid_R)
-                        Job_ids_K_I.append(jobid_I)
-
-        for i in range(tree_depth):
-            for k in range(A_terms_number):
-                u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                shots = P_A[k]
-                shots = 400
-                jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                file1 = open(file_name, "a")
-                file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-                file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-                file1.close()
-                Job_ids_q_R.append(jobid_R)
-                Job_ids_q_I.append(jobid_I)
-
-        exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
-        exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
-        exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
-        exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
-
-        Job_ids_regterm_R = []
-        Job_ids_regterm_I = []
-
-        if loss_type == 'l2reg':
-            for i in range(tree_depth):
-                for j in range(tree_depth):
-                    u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 400
-                    jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    file1 = open(file_name, "a")
-                    file1.writelines(["jobid u_reg, real:", str(jobid_R), '\n'])
-                    file1.writelines(["jobid u_reg, imag:", str(jobid_I), '\n'])
-                    file1.close()
-                    Job_ids_regterm_R.append(jobid_R)
-                    Job_ids_regterm_I.append(jobid_I)
-            exp_reg_R = calculate_statistics(simulator_backend, Job_ids_regterm_R, file_name=file_name)
-            exp_reg_I = calculate_statistics(simulator_backend, Job_ids_regterm_I, file_name=file_name)
-
-        if loss_type == 'hamiltonian':
-            for i in range(tree_depth):
-                for k in range(A_terms_number):
-                    u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                    shots = P_A[k]
-                    shots = 400
-                    jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    file1 = open(file_name, "a")
-                    file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-                    file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-                    file1.close()
-                    Job_ids_q_R.append(jobid_R)
-                    Job_ids_q_I.append(jobid_I)
-
-
-
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                # Uniform distribution of the shots
-                item = 0
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        inner_product_real = exp_K_R[i * tree_depth * A_terms_number * A_terms_number +
-                                                     j * A_terms_number * A_terms_number +
-                                                     k * A_terms_number +
-                                                     l]
-                        inner_product_imag = exp_K_I[i * tree_depth * A_terms_number * A_terms_number +
-                                                     j * A_terms_number * A_terms_number +
-                                                     k * A_terms_number +
-                                                     l]
-                        inner_product = inner_product_real - inner_product_imag * 1j
-                        item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
-                if loss_type == 'l2reg':
-                    inner_product_real = exp_reg_R[i * tree_depth + j]
-                    inner_product_imag = exp_reg_I[i * tree_depth + j]
-                    inner_product = inner_product_real - inner_product_imag * 1j
-                    item += 0.5 * inner_product
-                V_dagger_V[i][j] = item
-
-        R = real(V_dagger_V)
-        I = imag(V_dagger_V)
-
-        q = zeros((tree_depth, 1), dtype='complex128')
-        for i in range(tree_depth):
-            item = 0
-            for k in range(A_terms_number):
-                inner_product_real = exp_q_R[i * A_terms_number + k]
-                inner_product_imag = exp_q_I[i * A_terms_number + k]
-                inner_product = inner_product_real - inner_product_imag * 1j
-                item += conj(A_coeffs[k]) * inner_product
-            q[i][0] = item
-
-    else:
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                item = 0
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
-                            ansatz_tree[j]
-                        shots = P_A_A[k * A_terms_number + l]
-                        shots = 400
-                        # file1 = open(file_name, "a")
-                        # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                        # file1.close()
-                        inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1,
-                                                                                 shots=shots, tasks_num=tasks_num,
-                                                                                 shots_num=shots_num)
-                        inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j,
-                                                                                 shots=shots, tasks_num=tasks_num,
-                                                                                 shots_num=shots_num)
-                        inner_product = inner_product_real - inner_product_imag * 1j
-                        item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
-                if loss_type == 'l2reg':
-                    u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 400
-                    inner_product_real, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    inner_product_imag, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-
-                    inner_product = inner_product_real - inner_product_imag * 1j
-                    item += 0.5 * inner_product
-                V_dagger_V[i][j] = item
-
-        R = real(V_dagger_V)
-        I = imag(V_dagger_V)
-
-        q = zeros((tree_depth, 1), dtype='complex128')
-        for i in range(tree_depth):
-            item = 0
-            for k in range(A_terms_number):
-                u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                shots = P_A[k]
-                shots = 400
-                # file1 = open(file_name, "a")
-                # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                # file1.close()
-                inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                         tasks_num=tasks_num, shots_num=shots_num)
-                inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                         tasks_num=tasks_num, shots_num=shots_num)
-                inner_product = inner_product_real - inner_product_imag * 1j
-                item += conj(A_coeffs[k]) * inner_product
-            q[i][0] = item
-
-    # Q     =      R    -I
-    #       =      I     R
-    Q = array(append(append(R, -I, axis=1), append(I, R, axis=1), axis=0), dtype='float64')
-
-    # r = [Re(q),
-    #      Im(q)]
-    r_real = real(q)
-    r_imag = imag(q)
-    r = array(append(r_real, r_imag, axis=0), dtype='float64')
-    return Q, r, tasks_num, shots_num
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def calculate_Q_r_by_Hadamrd_test(instance, ansatz_tree,
-                                  loss_type=None, backend=None,
-                                  shots_budget=1024, frugal=False, file_name='message.txt'):
-    """
-        Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
-        But our objective function is:                                         z^T Q z  - 2 r^T z + 1
-        So the coefficients are corrected here.
-
-    :param R:
-    :param I:
-    :param q:
-    :return: Q, r
-    """
-
-    coeffs = instance.get_coeffs()
-    unitaries = instance.get_unitaries()
-    ub = instance.get_ub()
-    num_term = instance.get_num_term()
-    tree_depth = len(ansatz_tree)
-    V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
-    if loss_type is None:
-        loss_type = 'l2'
-    if backend is None:
-        backend = 'eigens'
-    # TODO: double check the shot frugal codes
-    # if frugal is True:
-    #     shots_each_entry = shots_budget / (10 * (tree_depth ** 2 + tree_depth))
-    #     M_A_A = sum(abs(conj(A_coeffs[k]) * A_coeffs[l])
-    #                 for k in range(A_terms_number) for l in range(A_terms_number))
-    #     P_A_A = [10 * int(shots_each_entry * (abs(conj(A_coeffs[k]) * A_coeffs[l]) / M_A_A))
-    #              for k in range(A_terms_number) for l in range(A_terms_number)]
-    #     M_A = sum([abs(conj(A_coeffs[k]))
-    #                for k in range(A_terms_number)])
-    #     P_A = [10 * int(shots_each_entry * (abs(conj(A_coeffs[k])) / M_A)) for k in range(A_terms_number)]
-    #
-    # else:
-    #     P_A_A = [100 for _ in range(A_terms_number) for _ in range(A_terms_number)]
-    #     P_A = [100 for _ in range(A_terms_number)]
-
-
-
-    if backend == 'braket':
-        provider = AWSBraketProvider()
-        simulator_backend = provider.get_backend(BRAKET_DEVICE)
-        Job_ids_K_R = []
-        Job_ids_K_I = []
-        Job_ids_q_R = []
-        Job_ids_q_I = []
-
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                # Uniform distribution of the shots
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
-                            ansatz_tree[j]
-                        shots = P_A_A[k * A_terms_number + l]
-                        shots = 400
-                        jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                      tasks_num=tasks_num, shots_num=shots_num)
-                        jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                      tasks_num=tasks_num, shots_num=shots_num)
-                        file1 = open(file_name, "a")
-                        file1.writelines(["jobid u_K, real:", str(jobid_R), '\n'])
-                        file1.writelines(["jobid u_K, imag:", str(jobid_I), '\n'])
-                        file1.close()
-                        Job_ids_K_R.append(jobid_R)
-                        Job_ids_K_I.append(jobid_I)
-
-        for i in range(tree_depth):
-            for k in range(A_terms_number):
-                u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                shots = P_A[k]
-                shots = 400
-                jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                              tasks_num=tasks_num, shots_num=shots_num)
-                file1 = open(file_name, "a")
-                file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-                file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-                file1.close()
-                Job_ids_q_R.append(jobid_R)
-                Job_ids_q_I.append(jobid_I)
-
-        exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
-        exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
-        exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
-        exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
-
-        Job_ids_regterm_R = []
-        Job_ids_regterm_I = []
-
-        if loss_type == 'l2reg':
-            for i in range(tree_depth):
-                for j in range(tree_depth):
-                    u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 400
-                    jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    file1 = open(file_name, "a")
-                    file1.writelines(["jobid u_reg, real:", str(jobid_R), '\n'])
-                    file1.writelines(["jobid u_reg, imag:", str(jobid_I), '\n'])
-                    file1.close()
-                    Job_ids_regterm_R.append(jobid_R)
-                    Job_ids_regterm_I.append(jobid_I)
-            exp_reg_R = calculate_statistics(simulator_backend, Job_ids_regterm_R, file_name=file_name)
-            exp_reg_I = calculate_statistics(simulator_backend, Job_ids_regterm_I, file_name=file_name)
-
-        if loss_type == 'hamiltonian':
-            for i in range(tree_depth):
-                for k in range(A_terms_number):
-                    u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                    shots = P_A[k]
-                    shots = 400
-                    jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    file1 = open(file_name, "a")
-                    file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
-                    file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
-                    file1.close()
-                    Job_ids_q_R.append(jobid_R)
-                    Job_ids_q_I.append(jobid_I)
-
-
-
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                # Uniform distribution of the shots
-                item = 0
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        inner_product_real = exp_K_R[i * tree_depth * A_terms_number * A_terms_number +
-                                                     j * A_terms_number * A_terms_number +
-                                                     k * A_terms_number +
-                                                     l]
-                        inner_product_imag = exp_K_I[i * tree_depth * A_terms_number * A_terms_number +
-                                                     j * A_terms_number * A_terms_number +
-                                                     k * A_terms_number +
-                                                     l]
-                        inner_product = inner_product_real - inner_product_imag * 1j
-                        item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
-                if loss_type == 'l2reg':
-                    inner_product_real = exp_reg_R[i * tree_depth + j]
-                    inner_product_imag = exp_reg_I[i * tree_depth + j]
-                    inner_product = inner_product_real - inner_product_imag * 1j
-                    item += 0.5 * inner_product
-                V_dagger_V[i][j] = item
-
-        R = real(V_dagger_V)
-        I = imag(V_dagger_V)
-
-        q = zeros((tree_depth, 1), dtype='complex128')
-        for i in range(tree_depth):
-            item = 0
-            for k in range(A_terms_number):
-                inner_product_real = exp_q_R[i * A_terms_number + k]
-                inner_product_imag = exp_q_I[i * A_terms_number + k]
-                inner_product = inner_product_real - inner_product_imag * 1j
-                item += conj(A_coeffs[k]) * inner_product
-            q[i][0] = item
-
-    else:
-        for i in range(tree_depth):
-            for j in range(tree_depth):
-                item = 0
-                for k in range(A_terms_number):
-                    for l in range(A_terms_number):
-                        u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
-                            ansatz_tree[j]
-                        shots = P_A_A[k * A_terms_number + l]
-                        shots = 400
-                        # file1 = open(file_name, "a")
-                        # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                        # file1.close()
-                        inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1,
-                                                                                 shots=shots, tasks_num=tasks_num,
-                                                                                 shots_num=shots_num)
-                        inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j,
-                                                                                 shots=shots, tasks_num=tasks_num,
-                                                                                 shots_num=shots_num)
-                        inner_product = inner_product_real - inner_product_imag * 1j
-                        item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
-                if loss_type == 'l2reg':
-                    u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
-                    shots = 400
-                    inner_product_real, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-                    inner_product_imag, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
-                                                                  tasks_num=tasks_num, shots_num=shots_num)
-
-                    inner_product = inner_product_real - inner_product_imag * 1j
-                    item += 0.5 * inner_product
-                V_dagger_V[i][j] = item
-
-        R = real(V_dagger_V)
-        I = imag(V_dagger_V)
-
-        q = zeros((tree_depth, 1), dtype='complex128')
-        for i in range(tree_depth):
-            item = 0
-            for k in range(A_terms_number):
-                u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
-                shots = P_A[k]
-                shots = 400
-                # file1 = open(file_name, "a")
-                # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
-                # file1.close()
-                inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
-                                                                         tasks_num=tasks_num, shots_num=shots_num)
-                inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
-                                                                         tasks_num=tasks_num, shots_num=shots_num)
-                inner_product = inner_product_real - inner_product_imag * 1j
-                item += conj(A_coeffs[k]) * inner_product
-            q[i][0] = item
-
-    # Q     =      R    -I
-    #       =      I     R
-    Q = array(append(append(R, -I, axis=1), append(I, R, axis=1), axis=0), dtype='float64')
-
-    # r = [Re(q),
-    #      Im(q)]
-    r_real = real(q)
-    r_imag = imag(q)
-    r = array(append(r_real, r_imag, axis=0), dtype='float64')
-    return Q, r, tasks_num, shots_num
+# def calculate_Q_r_by_Hadamrd_test(instance, ansatz_tree,
+#                                   loss_type=None, backend=None,
+#                                   shots_budget=1024, frugal=False, file_name='message.txt'):
+#     """
+#         Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
+#         But our objective function is:                                         z^T Q z  - 2 r^T z + 1
+#         So the coefficients are corrected here.
+#
+#     :param R:
+#     :param I:
+#     :param q:
+#     :return: Q, r
+#     """
+#
+#     coeffs = instance.get_coeffs()
+#     unitaries = instance.get_unitaries()
+#     ub = instance.get_ub()
+#     num_term = instance.get_num_term()
+#     tree_depth = len(ansatz_tree)
+#     V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
+#     if loss_type is None:
+#         loss_type = 'l2'
+#     if backend is None:
+#         backend = 'eigens'
+#     # if frugal is True:
+#     #     shots_each_entry = shots_budget / (10 * (tree_depth ** 2 + tree_depth))
+#     #     M_A_A = sum(abs(conj(A_coeffs[k]) * A_coeffs[l])
+#     #                 for k in range(A_terms_number) for l in range(A_terms_number))
+#     #     P_A_A = [10 * int(shots_each_entry * (abs(conj(A_coeffs[k]) * A_coeffs[l]) / M_A_A))
+#     #              for k in range(A_terms_number) for l in range(A_terms_number)]
+#     #     M_A = sum([abs(conj(A_coeffs[k]))
+#     #                for k in range(A_terms_number)])
+#     #     P_A = [10 * int(shots_each_entry * (abs(conj(A_coeffs[k])) / M_A)) for k in range(A_terms_number)]
+#     #
+#     # else:
+#     #     P_A_A = [100 for _ in range(A_terms_number) for _ in range(A_terms_number)]
+#     #     P_A = [100 for _ in range(A_terms_number)]
+#
+#
+#
+#     if backend == 'braket':
+#         provider = AWSBraketProvider()
+#         simulator_backend = provider.get_backend(BRAKET_DEVICE)
+#         Job_ids_K_R = []
+#         Job_ids_K_I = []
+#         Job_ids_q_R = []
+#         Job_ids_q_I = []
+#
+#         for i in range(tree_depth):
+#             for j in range(tree_depth):
+#                 # Uniform distribution of the shots
+#                 for k in range(A_terms_number):
+#                     for l in range(A_terms_number):
+#                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
+#                             ansatz_tree[j]
+#                         shots = P_A_A[k * A_terms_number + l]
+#                         shots = 400
+#                         jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                                       tasks_num=tasks_num, shots_num=shots_num)
+#                         jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                                       tasks_num=tasks_num, shots_num=shots_num)
+#                         file1 = open(file_name, "a")
+#                         file1.writelines(["jobid u_K, real:", str(jobid_R), '\n'])
+#                         file1.writelines(["jobid u_K, imag:", str(jobid_I), '\n'])
+#                         file1.close()
+#                         Job_ids_K_R.append(jobid_R)
+#                         Job_ids_K_I.append(jobid_I)
+#
+#         for i in range(tree_depth):
+#             for k in range(A_terms_number):
+#                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
+#                 shots = P_A[k]
+#                 shots = 400
+#                 jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                               tasks_num=tasks_num, shots_num=shots_num)
+#                 file1 = open(file_name, "a")
+#                 file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
+#                 file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
+#                 file1.close()
+#                 Job_ids_q_R.append(jobid_R)
+#                 Job_ids_q_I.append(jobid_I)
+#
+#         exp_K_R = calculate_statistics(simulator_backend, Job_ids_K_R, file_name=file_name)
+#         exp_K_I = calculate_statistics(simulator_backend, Job_ids_K_I, file_name=file_name)
+#         exp_q_R = calculate_statistics(simulator_backend, Job_ids_q_R, file_name=file_name)
+#         exp_q_I = calculate_statistics(simulator_backend, Job_ids_q_I, file_name=file_name)
+#
+#         Job_ids_regterm_R = []
+#         Job_ids_regterm_I = []
+#
+#         if loss_type == 'l2reg':
+#             for i in range(tree_depth):
+#                 for j in range(tree_depth):
+#                     u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
+#                     shots = 400
+#                     jobid_R, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     jobid_I, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     file1 = open(file_name, "a")
+#                     file1.writelines(["jobid u_reg, real:", str(jobid_R), '\n'])
+#                     file1.writelines(["jobid u_reg, imag:", str(jobid_I), '\n'])
+#                     file1.close()
+#                     Job_ids_regterm_R.append(jobid_R)
+#                     Job_ids_regterm_I.append(jobid_I)
+#             exp_reg_R = calculate_statistics(simulator_backend, Job_ids_regterm_R, file_name=file_name)
+#             exp_reg_I = calculate_statistics(simulator_backend, Job_ids_regterm_I, file_name=file_name)
+#
+#         if loss_type == 'hamiltonian':
+#             for i in range(tree_depth):
+#                 for k in range(A_terms_number):
+#                     u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
+#                     shots = P_A[k]
+#                     shots = 400
+#                     jobid_R, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     jobid_I, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     file1 = open(file_name, "a")
+#                     file1.writelines(["jobid u_q, real:", str(jobid_R), '\n'])
+#                     file1.writelines(["jobid u_q, imag:", str(jobid_I), '\n'])
+#                     file1.close()
+#                     Job_ids_q_R.append(jobid_R)
+#                     Job_ids_q_I.append(jobid_I)
+#
+#
+#
+#         for i in range(tree_depth):
+#             for j in range(tree_depth):
+#                 # Uniform distribution of the shots
+#                 item = 0
+#                 for k in range(A_terms_number):
+#                     for l in range(A_terms_number):
+#                         inner_product_real = exp_K_R[i * tree_depth * A_terms_number * A_terms_number +
+#                                                      j * A_terms_number * A_terms_number +
+#                                                      k * A_terms_number +
+#                                                      l]
+#                         inner_product_imag = exp_K_I[i * tree_depth * A_terms_number * A_terms_number +
+#                                                      j * A_terms_number * A_terms_number +
+#                                                      k * A_terms_number +
+#                                                      l]
+#                         inner_product = inner_product_real - inner_product_imag * 1j
+#                         item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
+#                 if loss_type == 'l2reg':
+#                     inner_product_real = exp_reg_R[i * tree_depth + j]
+#                     inner_product_imag = exp_reg_I[i * tree_depth + j]
+#                     inner_product = inner_product_real - inner_product_imag * 1j
+#                     item += 0.5 * inner_product
+#                 V_dagger_V[i][j] = item
+#
+#         R = real(V_dagger_V)
+#         I = imag(V_dagger_V)
+#
+#         q = zeros((tree_depth, 1), dtype='complex128')
+#         for i in range(tree_depth):
+#             item = 0
+#             for k in range(A_terms_number):
+#                 inner_product_real = exp_q_R[i * A_terms_number + k]
+#                 inner_product_imag = exp_q_I[i * A_terms_number + k]
+#                 inner_product = inner_product_real - inner_product_imag * 1j
+#                 item += conj(A_coeffs[k]) * inner_product
+#             q[i][0] = item
+#
+#     else:
+#         for i in range(tree_depth):
+#             for j in range(tree_depth):
+#                 item = 0
+#                 for k in range(A_terms_number):
+#                     for l in range(A_terms_number):
+#                         u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k]) + A_unitaries[l] + \
+#                             ansatz_tree[j]
+#                         shots = P_A_A[k * A_terms_number + l]
+#                         shots = 400
+#                         # file1 = open(file_name, "a")
+#                         # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+#                         # file1.close()
+#                         inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1,
+#                                                                                  shots=shots, tasks_num=tasks_num,
+#                                                                                  shots_num=shots_num)
+#                         inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j,
+#                                                                                  shots=shots, tasks_num=tasks_num,
+#                                                                                  shots_num=shots_num)
+#                         inner_product = inner_product_real - inner_product_imag * 1j
+#                         item += conj(A_coeffs[k]) * A_coeffs[l] * inner_product
+#                 if loss_type == 'l2reg':
+#                     u_reg = U_list_dagger(ansatz_tree[i]) + ansatz_tree[j]
+#                     shots = 400
+#                     inner_product_real, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#                     inner_product_imag, tasks_num, shots_num = Hadamard_test(u_reg, backend=backend, alpha=1j, shots=shots,
+#                                                                   tasks_num=tasks_num, shots_num=shots_num)
+#
+#                     inner_product = inner_product_real - inner_product_imag * 1j
+#                     item += 0.5 * inner_product
+#                 V_dagger_V[i][j] = item
+#
+#         R = real(V_dagger_V)
+#         I = imag(V_dagger_V)
+#
+#         q = zeros((tree_depth, 1), dtype='complex128')
+#         for i in range(tree_depth):
+#             item = 0
+#             for k in range(A_terms_number):
+#                 u = U_list_dagger(ansatz_tree[i]) + U_list_dagger(A_unitaries[k])
+#                 shots = P_A[k]
+#                 shots = 400
+#                 # file1 = open(file_name, "a")
+#                 # file1.writelines(["The unitary for estimation is:", str(u), '\n'])
+#                 # file1.close()
+#                 inner_product_real, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1, shots=shots,
+#                                                                          tasks_num=tasks_num, shots_num=shots_num)
+#                 inner_product_imag, tasks_num, shots_num = Hadamard_test(u, backend=backend, alpha=1j, shots=shots,
+#                                                                          tasks_num=tasks_num, shots_num=shots_num)
+#                 inner_product = inner_product_real - inner_product_imag * 1j
+#                 item += conj(A_coeffs[k]) * inner_product
+#             q[i][0] = item
+#
+#     # Q     =      R    -I
+#     #       =      I     R
+#     Q = array(append(append(R, -I, axis=1), append(I, R, axis=1), axis=0), dtype='float64')
+#
+#     # r = [Re(q),
+#     #      Im(q)]
+#     r_real = real(q)
+#     r_imag = imag(q)
+#     r = array(append(r_real, r_imag, axis=0), dtype='float64')
+#     return Q, r, tasks_num, shots_num
 
 ########################################################################################################################
 # IonQ Access
@@ -655,8 +491,6 @@ def calculate_Q_r_by_Hadamrd_test(instance, ansatz_tree,
 #         exp = p0 - p1
 #         exps.append(exp)
 #     return exps
-
-
 
 
 # Braket Access

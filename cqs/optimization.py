@@ -101,18 +101,18 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
         raise ValueError
 
     half_var = int(len(comb_params) / 2)
-    vars = [0 for _ in range(half_var)]
+    alphas = [0 for _ in range(half_var)]
 
     for i in range(half_var):
-        var = comb_params[i] + comb_params[half_var + i] * 1j
-        vars[i] = var
+        alpha = comb_params[i] + comb_params[half_var + i] * 1j
+        alphas[i] = alpha
 
     # Calculate l2-norm loss function
     params_array = array(comb_params).reshape(-1, 1)
     Q_array = array(Q / 2)
     r_array = array(r / (-2)).reshape(-1, 1)
-    loss = abs(
-        (matmul(matmul(transpose(params_array), Q_array), params_array) - 2 * matmul(transpose(r_array), params_array) + 1).item())
+    loss = abs((matmul(matmul(transpose(params_array), Q_array), params_array)
+                - 2 * matmul(transpose(r_array), params_array) + 1).item())
     # Calculate Hamiltonian loss fucntion
     # loss = abs((transpose(params_array) @ Q_array @ params_array - (transpose(params_array) @ r_array) * transpose(r_array) @ params_array).item())
-    return loss, vars
+    return loss, alphas

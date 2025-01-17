@@ -26,6 +26,9 @@
 
 from numpy import real, imag
 
+def U_list_dagger(U):
+    return U[::-1]
+
 def eigen_calculator(Pauli_string, basis):
     if basis == 0:
         if Pauli_string == 'X':
@@ -61,17 +64,17 @@ def eigen_calculator(Pauli_string, basis):
         raise ValueError
     return basis, eigen
 
-def Hadamard_test(U, alpha=1):
+def Hadamard_test(n, U1, U2):
     # Initialize settings
     # Instead of a single unitary, we input a list of unitaries.
     # U = [U1, U2, U3] = [[[], [], ...], [[], [], ...], [[], [], ...], [[], [], ...]]
     # Each Ui = [[], [], ...] := [[column1], [column2], ...]
-    width = len(U[0])
 
     # Create gates for the unitary
     # U = [U1, U2], U1 operates before U2, --> |psi> = U2 U1 |0>
-    Bases = [0 for _ in range(width)]
-    Eigens = [1 for _ in range(width)]
+    Bases = [0 for _ in range(n)]
+    Eigens = [1 for _ in range(n)]
+    U = U_list_dagger(U1) + U2
     for layer in U:
         for i, gate in enumerate(layer):
             basis, eigen = eigen_calculator(gate, Bases[i])
@@ -81,13 +84,7 @@ def Hadamard_test(U, alpha=1):
     if 1 in Bases:
         return 0
     else:
-        coeff = 1
+        U_exp = 1
         for eigen in Eigens:
-            coeff *= eigen
-        if alpha == 1:
-            u_ex = real(coeff)
-        elif alpha == 1j:
-            u_ex = imag(coeff)
-        else:
-            raise ValueError("The alpha should be either 1 or 1j.")
-    return u_ex
+            U_exp *= eigen
+        return U_exp

@@ -191,14 +191,14 @@ class RandomInstance():
         return A_mat_pre
 
     def __calculate_diagonal_pre(self, A_mat_pre):
-        diag_pre_max = max(np_sum(np_abs(A_mat_pre), axis=1)) + 1
+        diag_pre_max = (max(np_sum(np_abs(A_mat_pre), axis=1)) + 10 ** (-14)).item()
         return diag_pre_max
 
     def __generate_identity(self):
         A_mat_pre = self.__calculate_matrix_pre()
         diag_pre_max = self.__calculate_diagonal_pre(A_mat_pre)
         self.__coeffs.append(diag_pre_max)
-        self.__coeffs = self.__coeffs / diag_pre_max
+        self.__coeffs = [i / diag_pre_max for i in self.__coeffs]
         if self.__which_type in ['Pauli_eigens', 'Pauli_gates']:
             self.__unitaries.append([['I' for _ in range(self.__num_qubit)]])
         elif self.__which_type in ['Haar']:
@@ -222,6 +222,7 @@ class RandomInstance():
             self.__which_type = which_type
 
         if self.__which_type == 'Pauli_eigens':
+
             # We further make sure that the created matrix A is Hermitian and invertible
             self.__coeffs = [(random() * 2 - 1) for _ in range(self.__num_term - 1)]
             self.__unitaries = []
@@ -273,6 +274,9 @@ class RandomInstance():
 
     def get_num_qubit(self):
         return self.__num_qubit
+
+    def get_num_term(self):
+        return self.__num_term
 
     def get_input_type(self):
         return self.__which_type
