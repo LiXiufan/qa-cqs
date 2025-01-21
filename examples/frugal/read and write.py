@@ -8,5 +8,3 @@ for l in range(5, len(LINES), 8):
     c = LINES[l+1]
     d = c.split(':')[1].strip()
     text_file2.writelines([b+" "+d, '\n'])
-
-#
