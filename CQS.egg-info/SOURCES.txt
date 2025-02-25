@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+CQS.egg-info/PKG-INFO
+CQS.egg-info/SOURCES.txt
+CQS.egg-info/dependency_links.txt
+CQS.egg-info/requires.txt
+CQS.egg-info/top_level.txt
