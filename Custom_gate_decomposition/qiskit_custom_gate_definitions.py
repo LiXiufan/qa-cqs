@@ -123,3 +123,112 @@ class GPI2Gate(Gate):
             [1, exp_neg],
             [exp_pos, 1]
         ])
+
+class FullMSGate(Gate):
+    """
+    Custom Full Mølmer-Sørensen (MS) Gate for Qiskit.
+
+    This gate applies a fully entangling operation between two qubits with two phase parameters.
+
+    Mathematically, it performs the following unitary operation:
+
+        U = (1/√2) * [[1,  0,  0,  -i e^(-2πi (ϕ₀ + ϕ₁)) ]
+                      [0,  1,  -i e^(-2πi (ϕ₀ - ϕ₁)),  0 ]
+                      [0,  -i e^(2πi (ϕ₀ - ϕ₁)),  1,  0 ]
+                      [-i e^(2πi (ϕ₀ + ϕ₁)),  0,  0,  1 ]]
+
+    The parameters `ϕ₀` and `ϕ₁` control the phase shifts applied to the qubits.
+
+    Attributes:
+        - ϕ₀ (float): Phase parameter 1
+        - ϕ₁ (float): Phase parameter 2
+    """
+
+    def __init__(self, phi0, phi1):
+        """
+        Initialize the FullMS Gate.
+
+        Args:
+            phi0 (float): First phase shift angle.
+            phi1 (float): Second phase shift angle.
+        """
+        super().__init__("fullMS", 2, [phi0, phi1])  # Define a 2-qubit gate with 2 parameters
+
+    def to_matrix(self):
+        """
+        Compute the unitary matrix representation of the FullMS Gate.
+
+        Returns:
+            np.ndarray: The 4x4 unitary matrix corresponding to the FullMS Gate.
+        """
+        phi0, phi1 = self.params  # Extract the phase parameters
+        factor = 1 / np.sqrt(2)  # Normalization factor
+
+        exp_14 = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
+        exp_23 = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
+        exp_32 = -1j * np.exp(2j * np.pi * (phi0 - phi1))
+        exp_41 = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+
+        return factor * np.array([
+            [1, 0, 0, exp_14],
+            [0, 1, exp_23, 0],
+            [0, exp_32, 1, 0],
+            [exp_41, 0, 0, 1]
+        ])
+
+
+class PartialMSGate(Gate):
+    """
+    Custom Partial Mølmer-Sørensen (MS) Gate for Qiskit.
+
+    This gate applies an entangling operation with two phase parameters and an additional
+    rotation parameter `θ` controlling the entanglement strength.
+
+    Mathematically, it performs the following unitary operation:
+
+        U = [[ cos(πθ),  0,  0,  -i e^(-2πi (ϕ₀ + ϕ₁)) sin(πθ) ]
+             [ 0,  cos(πθ),  -i e^(-2πi (ϕ₀ - ϕ₁)) sin(πθ),  0 ]
+             [ 0,  -i e^(2πi (ϕ₀ - ϕ₁)) sin(πθ),  cos(πθ),  0 ]
+             [ -i e^(2πi (ϕ₀ + ϕ₁)) sin(πθ),  0,  0,  cos(πθ) ]]
+
+    The parameters `ϕ₀`, `ϕ₁`, and `θ` control the entangling operation.
+
+    Attributes:
+        - ϕ₀ (float): Phase parameter 1
+        - ϕ₁ (float): Phase parameter 2
+        - θ (float): Rotation parameter (controls entanglement strength)
+    """
+
+    def __init__(self, phi0, phi1, theta):
+        """
+        Initialize the PartialMS Gate.
+
+        Args:
+            phi0 (float): First phase shift angle.
+            phi1 (float): Second phase shift angle.
+            theta (float): Rotation parameter.
+        """
+        super().__init__("partialMS", 2, [phi0, phi1, theta])  # Define a 2-qubit gate with 3 parameters
+
+    def to_matrix(self):
+        """
+        Compute the unitary matrix representation of the PartialMS Gate.
+
+        Returns:
+            np.ndarray: The 4x4 unitary matrix corresponding to the PartialMS Gate.
+        """
+        phi0, phi1, theta = self.params  # Extract parameters
+        cos_theta = np.cos(np.pi * theta)
+        sin_theta = np.sin(np.pi * theta)
+
+        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
+
+        return np.array([
+            [cos_theta, 0, 0, e_neg * sin_theta],
+            [0, cos_theta, e_diff_neg * sin_theta, 0],
+            [0, e_diff_pos * sin_theta, cos_theta, 0],
+            [e_pos * sin_theta, 0, 0, cos_theta]
+        ])

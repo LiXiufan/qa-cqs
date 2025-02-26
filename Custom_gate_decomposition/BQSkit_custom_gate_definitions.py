@@ -352,19 +352,19 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         phi0, phi1, theta = params  # Extract the phase parameters and rotation angle
-        cos_theta = np.cos(np.pi * theta)
-        sin_theta = np.sin(np.pi * theta)
-        exp_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
-        exp_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        exp_diff_pos = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
-        exp_diff_neg = -1j * np.exp(2j * np.pi * (phi0 - phi1))
+        cos = np.cos(np.pi * theta)
+        sin = np.sin(np.pi * theta)
+        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
 
         return UnitaryMatrix(
             np.array([
-                [cos_theta, 0, 0, exp_neg * sin_theta],
-                [0, cos_theta, exp_diff_pos * sin_theta, 0],
-                [0, exp_diff_neg * sin_theta, cos_theta, 0],
-                [exp_pos * sin_theta, 0, 0, cos_theta]
+                [cos, 0, 0, e_neg * sin],
+                [0, cos, e_diff_neg * sin, 0],
+                [0, e_diff_pos * sin, cos, 0],
+                [e_pos * sin, 0, 0, cos]
             ])
         )
 
@@ -381,35 +381,39 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         phi0, phi1, theta = params
-        cos_theta = np.cos(np.pi * theta)
-        sin_theta = np.sin(np.pi * theta)
-        d_cos_theta = -np.pi * sin_theta
-        d_sin_theta = np.pi * cos_theta
+        cos = np.cos(np.pi * theta)
+        sin = np.sin(np.pi * theta)
+        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
 
         # Compute derivatives
-        d_exp_pos = 2j * np.pi * np.exp(2j * np.pi * (phi0 + phi1))
-        d_exp_neg = -2j * np.pi * np.exp(-2j * np.pi * (phi0 + phi1))
-        d_exp_diff_pos = -2j * np.pi * np.exp(-2j * np.pi * (phi0 - phi1))
-        d_exp_diff_neg = 2j * np.pi * np.exp(2j * np.pi * (phi0 - phi1))
+        d_cos = -np.pi * sin
+        d_sin = np.pi * cos
+        d_e_pos = 2 * np.pi * np.exp(2j * np.pi * (phi0 + phi1))
+        d_e_neg = -2 * np.pi * np.exp(-2j * np.pi * (phi0 + phi1))
+        d_e_diff_pos = 2 * np.pi * np.exp(2j * np.pi * (phi0 - phi1))
+        d_e_diff_neg = -2 * np.pi * np.exp(-2j * np.pi * (phi0 - phi1))
 
         return np.array([
             np.array([
-                [0, 0, 0, d_exp_neg * sin_theta],
-                [0, 0, d_exp_diff_pos * sin_theta, 0],
-                [0, d_exp_diff_neg * sin_theta, 0, 0],
-                [d_exp_pos * sin_theta, 0, 0, 0]
+                [0, 0, 0, d_e_neg * sin],
+                [0, 0, d_e_diff_neg * sin, 0],
+                [0, d_e_diff_pos * sin, 0, 0],
+                [d_e_pos * sin, 0, 0, 0]
             ], dtype=np.complex128),
             np.array([
-                [0, 0, 0, d_exp_neg * sin_theta],
-                [0, 0, -d_exp_diff_pos * sin_theta, 0],
-                [0, -d_exp_diff_neg * sin_theta, 0, 0],
-                [d_exp_pos * sin_theta, 0, 0, 0]
+                [0, 0, 0, d_e_neg * sin],
+                [0, 0, -d_e_diff_neg * sin, 0],
+                [0, -d_e_diff_pos * sin, 0, 0],
+                [d_e_pos * sin, 0, 0, 0]
             ], dtype=np.complex128),
             np.array([
-                [d_cos_theta, 0, 0, d_sin_theta * exp_neg],
-                [0, d_cos_theta, d_sin_theta * exp_diff_pos, 0],
-                [0, d_sin_theta * exp_diff_neg, d_cos_theta, 0],
-                [d_sin_theta * exp_pos, 0, 0, d_cos_theta]
+                [d_cos, 0, 0, d_sin * e_neg],
+                [0, d_cos, d_sin * e_diff_neg, 0],
+                [0, d_sin * e_diff_pos, d_cos, 0],
+                [d_sin * e_pos, 0, 0, d_cos]
             ], dtype=np.complex128)
         ])
 
