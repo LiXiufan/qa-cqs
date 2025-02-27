@@ -54,9 +54,11 @@ setup(
         'qiskit',
         'qiskit-ibm-runtime',
         'qiskit-ibm-provider',
+        'qiskit-ionq',
         'qibo',
         'cvxopt',
-        'qiskit-braket-provider'
+        'qiskit-braket-provider',
+        'bqskit',
     ],
     packages=find_packages(),
     license='Apache License 2.0',

@@ -26,7 +26,7 @@
 from cqs.object import RandomInstance
 from cqs.local.calculation import calculate_Q_r_by_eigens
 from cqs.optimization import solve_combination_parameters
-from cqs.expansion import expand_ansatz_tree_by_eigens
+from cqs.local.expansion import expand_ansatz_tree_by_eigens
 convergence_loss = 0.01
 stopping_iteration = 5
 slow_iteration = 30

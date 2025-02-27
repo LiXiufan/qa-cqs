@@ -1,0 +1,35 @@
+Metadata-Version: 2.2
+Name: CQS
+Version: 1.0
+Summary: CQS is a Python-based quantum software development kit (SDK). It provides a full-stack programming experience for testing the performance of near-term quantum algorithms for linear systems of equations via high-performance simulators, various hardware frameworks and a focus on IonQ's trapped-ion quantum computer.
+Author: Xiufan Li
+Author-email: shenlongtianwu8@gmail.com
+License: Apache License 2.0
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: requests
+Requires-Dist: bidict
+Requires-Dist: websocket-client
+Requires-Dist: scipy
+Requires-Dist: matplotlib
+Requires-Dist: networkx
+Requires-Dist: sympy
+Requires-Dist: qiskit
+Requires-Dist: qiskit-ibm-runtime
+Requires-Dist: qiskit-ibm-provider
+Requires-Dist: qibo
+Requires-Dist: cvxopt
+Requires-Dist: qiskit-braket-provider
+Dynamic: author
+Dynamic: author-email
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: summary
+
+# qa-cqs
+This repository contains the simulation programs of the near-term quantum algorithms based on the classical combination of variational quantum states (CQS). The algorithm was originally proposed by Hsin-Yuan Huang, et. al. in the article [arXiv:1909.07344]. For feedback, please contact Xiufan at e1117166@u.nus.edu.
+
+To edit something, type here.

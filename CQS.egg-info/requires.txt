@@ -1,0 +1,14 @@
+numpy
+requests
+bidict
+websocket-client
+scipy
+matplotlib
+networkx
+sympy
+qiskit
+qiskit-ibm-runtime
+qiskit-ibm-provider
+qibo
+cvxopt
+qiskit-braket-provider
