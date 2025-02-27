@@ -1,7 +1,6 @@
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit.circuit import Parameter
 from hardware.ionq.transpiler import *
-from qiskit.circuit.random import random_circuit
 from numpy import pi
 # qc = QuantumCircuit(3)
 # qc.cx(0, 2)

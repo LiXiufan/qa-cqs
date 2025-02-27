@@ -1,5 +1,4 @@
-from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from qiskit.circuit import Parameter
+from qiskit import QuantumCircuit
 from hardware.ionq.transpiler import transpile_to_ionq_native_gates
 
 # qc = QuantumCircuit(3)

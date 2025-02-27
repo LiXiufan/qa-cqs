@@ -132,7 +132,7 @@ def load_qasm(file_path):
 
     return qc  # Return the constructed QuantumCircuit
 
-# # Load the QASM file and construct the Qiskit circuit
-qc = load_qasm("circuit.qasm")
-# Print the circuit as ASCII text (Qiskit's built-in drawer)
-print(qc.draw(output='text'))
+# # # Load the QASM file and construct the Qiskit circuit
+# qc = load_qasm("circuit.qasm")
+# # Print the circuit as ASCII text (Qiskit's built-in drawer)
+# print(qc.draw(output='text'))

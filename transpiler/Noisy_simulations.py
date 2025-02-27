@@ -7,6 +7,10 @@ from transpiler.QASM2_reader import load_qasm
 import pennylane as qml
 from bqskit.ext import qiskit_to_bqskit
 from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, transpile
+
+from qiskit_ionq import IonQProvider
+
 
 IONQ_gate_set = {PartialMSGate(), GPIGate(), GPI2Gate()}
 def transpiler(qiskit_qc, gate_set=IONQ_gate_set,optimization_level=2):
@@ -57,6 +61,7 @@ def transpiler(qiskit_qc, gate_set=IONQ_gate_set,optimization_level=2):
     return qiskit_circuit_transpiled
 
 
+
 def get_noisy_counts(qiskit_qc, noise_level):
     # Convert the Qiskit quantum circuit into a PennyLane circuit
     qml_circuit = qml.from_qiskit(qiskit_qc)
@@ -93,34 +98,48 @@ def get_noisy_counts(qiskit_qc, noise_level):
 
 
 
+if __name__=="main":
 
-# ===========================
-# TEST: Transpile a Qiskit circuit
-# ===========================
+    # ===========================
+    # TEST: Transpile a Qiskit circuit
+    # ===========================
 
-# Create a Qiskit quantum circuit
-qc_qiskit = QuantumCircuit(2)
-qc_qiskit.h(0)  # Hadamard on qubit 0
-qc_qiskit.rzz(1, 0, 1)  # RZZ gate with parameter 1
-qc_qiskit.ry(3, 1)  # RY gate with parameter 3 on qubit 1
-qc_qiskit.rxx(2.14584545, 0, 1)  # RXX gate with parameter
-qc_qiskit.rzz(1.1561, 1, 0)  # RZZ gate with parameter
-qc_qiskit.rx(1.1561, 1)  # RX gate with parameter
+    # Create a Qiskit quantum circuit
+    qc_qiskit = QuantumCircuit(2)
+    qc_qiskit.h(0)  # Hadamard on qubit 0
+    qc_qiskit.rzz(1, 0, 1)  # RZZ gate with parameter 1
+    qc_qiskit.ry(3, 1)  # RY gate with parameter 3 on qubit 1
+    qc_qiskit.rxx(2.14584545, 0, 1)  # RXX gate with parameter
+    qc_qiskit.rzz(1.1561, 1, 0)  # RZZ gate with parameter
+    qc_qiskit.rx(1.1561, 1)  # RX gate with parameter
 
-# Print the transpiled circuit
-print("TEST Qiskit Circuit:")
-print(qc_qiskit)
+    # Print the transpiled circuit
+    print("TEST Qiskit Circuit:")
+    print(qc_qiskit)
 
-# Transpile the Qiskit circuit to use MS gates
-transpiled_qc = transpiler(qc_qiskit)
+    # Transpile the Qiskit circuit to use MS gates
+    transpiled_qc = transpiler(qc_qiskit)
+    # GET NOISEless probabilities
+    print(get_noisy_counts(transpiled_qc, 0))
+    # Print the transpiled circuit
+    print("Transpiled Qiskit Circuit:")
+    print(transpiled_qc)
+    #GET NOISY probabilities
+    print(get_noisy_counts(transpiled_qc, 0.02))
 
-# GET NOISEless probabilities
-print(get_noisy_counts(transpiled_qc, 0))
 
 
-# Print the transpiled circuit
-print("Transpiled Qiskit Circuit:")
-print(transpiled_qc)
 
-#GET NOISY probabilities
-print(get_noisy_counts(transpiled_qc, 0.02))
+    provider = IonQProvider()
+    backend_native = provider.get_backend("simulator", gateset="native")
+    transpiled_qc = transpile(qc_qiskit, backend=backend_native, optimization_level=3)
+
+    # GET NOISEless probabilities
+    print(get_noisy_counts(transpiled_qc, 0))
+
+    # Print the transpiled circuit
+    print("Transpiled Qiskit Circuit:")
+    print(transpiled_qc)
+
+    #GET NOISY probabilities
+    print(get_noisy_counts(transpiled_qc, 0.02))
