@@ -21,11 +21,8 @@
 # !/usr/bin/env python3
 
 """
-    Access to the pre-known calculator based on Pauli eigenvalues.
+    Access to the efficient calculator based on Pauli eigenvalues.
 """
-
-from numpy import real, imag
-
 def U_list_dagger(U):
     return U[::-1]
 
@@ -64,7 +61,7 @@ def eigen_calculator(Pauli_string, basis):
         raise ValueError
     return basis, eigen
 
-def Hadamard_test(n, U1, U2):
+def Hadamard_test(n, U1, U2, Ub):
     # Initialize settings
     # Instead of a single unitary, we input a list of unitaries.
     # U = [U1, U2, U3] = [[[], [], ...], [[], [], ...], [[], [], ...], [[], [], ...]]
@@ -74,7 +71,7 @@ def Hadamard_test(n, U1, U2):
     # U = [U1, U2], U1 operates before U2, --> |psi> = U2 U1 |0>
     Bases = [0 for _ in range(n)]
     Eigens = [1 for _ in range(n)]
-    U = U_list_dagger(U1) + U2
+    U = U_list_dagger(Ub) + U_list_dagger(U1) + U2 + Ub
     for layer in U:
         for i, gate in enumerate(layer):
             basis, eigen = eigen_calculator(gate, Bases[i])

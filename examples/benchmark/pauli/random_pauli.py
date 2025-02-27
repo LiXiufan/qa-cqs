@@ -24,7 +24,7 @@
     Benchmark problem sizes and algorithm scalability.
 """
 from cqs.object import RandomInstance
-from cqs.calculation import calculate_Q_r_by_eigens
+from cqs.local.calculation import calculate_Q_r_by_eigens
 from cqs.optimization import solve_combination_parameters
 from cqs.expansion import expand_ansatz_tree_by_eigens
 convergence_loss = 0.01
@@ -44,6 +44,7 @@ def main(NRANGE, KRANGE, SAMPLES, FILE):
                 coeffs = instance1.get_coeffs()
                 unitaries = instance1.get_unitaries()
                 ub = instance1.get_ub()
+                # TODO: change the initial point of ansatz tree
                 ansatz_tree = [ub]
                 ITR = []
                 LOSS = []

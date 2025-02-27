@@ -21,8 +21,6 @@
 
 # !/usr/bin/env python3
 
-
-
 def Richardson_extrapolate(Shots, Unmiti):
     exp_mtg = 0
     length = len(Shots)

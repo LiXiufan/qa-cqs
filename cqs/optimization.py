@@ -36,7 +36,7 @@
 
 from cvxopt import matrix
 from cvxopt.solvers import qp
-from numpy import linalg, array, diag, multiply, real, imag
+from numpy import linalg, diag, multiply, real, imag
 from numpy import array, ndarray
 from numpy import transpose, matmul
 from sympy import Matrix

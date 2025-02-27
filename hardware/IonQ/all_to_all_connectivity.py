@@ -1,11 +1,11 @@
-# Plot the figure of IonQ with different qubits
+# Plot the figure of ionq with different qubits
 import matplotlib.pyplot as plt
 import networkx as nx
 
 G = nx.Graph()
 
 N = [11, 23, 32]
-name = ['IonQ Harmony', 'IonQ Aria', 'IonQ Forte']
+name = ['ionq Harmony', 'ionq Aria', 'ionq Forte']
 for k in range(3):
     n = N[k]
     V = list(range(n))

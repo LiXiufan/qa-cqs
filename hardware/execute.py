@@ -7,9 +7,11 @@ from hardware.Eigens.eigens_access import Hadamard_test as Hadamard_test_eigens
 # from hardware.Matrix.matrix_access import Hadmard_test as Hadmard_test_matrix
 # from hardware.AWS.braket_access import Hadamard_test as Hadamard_test_braket
 # from hardware.AWS.noisy_access import Hadamard_test as Hadamard_test_braket_noisy
-def Hadamard_test(n, U1, U2, real='r', backend='eigens', shots=1024, device='SV1'):
+
+
+def Hadamard_test(n, U1, U2, Ub, real='r', backend='eigens', shots=1024, device='SV1'):
     if backend == 'eigens':
-        return Hadamard_test_eigens(n, U1, U2)
+        return Hadamard_test_eigens(n, U1, U2, Ub)
     # elif backend == 'braket':
     #     return Hadamard_test_braket(n, U1, U2, real=real, device=device, shots=shots)
     # elif backend == 'qibo':
