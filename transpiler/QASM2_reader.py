@@ -135,7 +135,7 @@ def from_qasm2_to_braket(file_name: str):
                 braket_circuit.ms(q1, q2, theta, phi1, phi2)
             else:
                 qubit = [int(q.replace("q[", "").replace("],", "").replace("];", "")) for q in args][0]
-                param = float(param.rstrip(");"))
+                param = normalize_param(float(param.rstrip(");")))
 
                 if gate_name == "GPI":
                     braket_circuit.gpi(qubit, param)
