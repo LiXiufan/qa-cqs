@@ -22,10 +22,8 @@ def normalize_theta(param):
     new_param=param
     while new_param>np.pi/2:
         new_param-=np.pi/2
-        print(new_param)
     while new_param<0:
         new_param+=np.pi/2
-        print(new_param)
     return new_param
 
 class VirtualZGate(QubitGate, DifferentiableUnitary, CachedClass):

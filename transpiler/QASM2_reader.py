@@ -15,10 +15,8 @@ def normalize_theta(param):
     new_param=param
     while new_param>np.pi/2:
         new_param-=np.pi/2
-        print(new_param)
     while new_param<0:
         new_param+=np.pi/2
-        print(new_param)
     return new_param
 
 def load_qasm(file_path):
@@ -94,5 +92,3 @@ def load_qasm(file_path):
 
     return qc  # Return the constructed QuantumCircuit
 
-if __name__=="main":
-    print(normalize_param(15))

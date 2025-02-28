@@ -62,12 +62,12 @@ def transpiler(qiskit_qc, gate_set=IONQ_gate_set,optimization_level=2):
 
 
 
-def get_noisy_counts(qiskit_qc, noise_level):
+def get_noisy_counts(qiskit_qc, noise_level_two_qubit, noise_level_one_qubit, readout_error):
     # Convert the Qiskit quantum circuit into a PennyLane circuit
     qml_circuit = qml.from_qiskit(qiskit_qc)
 
-    # Compute the adjusted noise level for single-qubit depolarizing channels
-    noise_level_one_qubit = noise_level * 3 / 4
+    # Compute the adjusted noise level for single-qubit depolarizing channels in 2Q noise
+    noise_level_two_qubit_single_channel = noise_level_two_qubit * 3 / 4
 
     # Get the number of qubits in the circuit
     number_of_qubits = qiskit_qc.num_qubits
@@ -83,10 +83,18 @@ def get_noisy_counts(qiskit_qc, noise_level):
             # Apply each gate as a unitary operation
             qml.QubitUnitary(op.parameters[0], wires=op.wires)
 
-            # Apply depolarizing noise only after two-qubit (MS) gates
+            # Apply **1-qubit depolarizing noise** after every 1-qubit gate
+            if len(op.wires) == 1:
+                qml.DepolarizingChannel(noise_level_one_qubit, wires=op.wires[0])
+
+            # Apply **2-qubit depolarizing noise** after two-qubit (MS) gates
             if len(op.wires) == 2:
                 for qubit in op.wires:
-                    qml.DepolarizingChannel(noise_level_one_qubit, wires=qubit)  # Adjusted probability
+                    qml.DepolarizingChannel(noise_level_two_qubit_single_channel, wires=qubit)  # Adjusted probability
+
+        # Apply **readout error (bit flip) before measurement**
+        for qubit in range(number_of_qubits):
+            qml.BitFlip(readout_error, wires=qubit)
 
         # Return the probability distribution over computational basis states
         return qml.probs(wires=range(number_of_qubits))
@@ -97,8 +105,7 @@ def get_noisy_counts(qiskit_qc, noise_level):
 
 
 
-
-if __name__=="main":
+if __name__=="__main__":
 
     # ===========================
     # TEST: Transpile a Qiskit circuit
@@ -120,12 +127,12 @@ if __name__=="main":
     # Transpile the Qiskit circuit to use MS gates
     transpiled_qc = transpiler(qc_qiskit)
     # GET NOISEless probabilities
-    print(get_noisy_counts(transpiled_qc, 0))
+    print(get_noisy_counts(transpiled_qc, 0,0,0))
     # Print the transpiled circuit
     print("Transpiled Qiskit Circuit:")
     print(transpiled_qc)
     #GET NOISY probabilities
-    print(get_noisy_counts(transpiled_qc, 0.02))
+    print(get_noisy_counts(transpiled_qc, 0.02,0,0))
 
 
 
@@ -135,11 +142,11 @@ if __name__=="main":
     transpiled_qc = transpile(qc_qiskit, backend=backend_native, optimization_level=3)
 
     # GET NOISEless probabilities
-    print(get_noisy_counts(transpiled_qc, 0))
+    print(get_noisy_counts(transpiled_qc, 0,0,0))
 
     # Print the transpiled circuit
     print("Transpiled Qiskit Circuit:")
     print(transpiled_qc)
 
     #GET NOISY probabilities
-    print(get_noisy_counts(transpiled_qc, 0.02))
+    print(get_noisy_counts(transpiled_qc, 0.02,0.001,0.1))
