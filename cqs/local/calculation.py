@@ -145,7 +145,7 @@ def __estimate_V_dagger_V(instance, ansatz_tree, loss_type=None):
         V_dagger_V += 1/2 * identity(tree_depth, dtype='complex128')
     return V_dagger_V
 
-def __estimate_q(instance, ansatz_tree, loss_type=None):
+def __estimate_q(instance, ansatz_tree):
     r"""
         Estimate all independent inner products that appear in vector `q`.
         In total, we are going to estimate
@@ -195,7 +195,7 @@ def calculate_Q_r_by_eigens(instance, ansatz_tree, loss_type=None):
     :return: Q, r
     """
     V_dagger_V = __estimate_V_dagger_V(instance, ansatz_tree, loss_type)
-    q = __estimate_q(instance, ansatz_tree, loss_type)
+    q = __estimate_q(instance, ansatz_tree)
     return __reshape_to_Q_r(V_dagger_V, q)
 
 

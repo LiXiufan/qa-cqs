@@ -26,25 +26,11 @@
     One is originated from the article: Ansatz tree with maximum gradient overlap
     Another is our self-developed method: Ansatz tree with l1 sampling expansion.
 """
+
 from numpy import conj
-# from cqs.calculation import U_list_dagger, calculate_statistics
 from random import choice
+
 from hardware.execute import Hadamard_test
-
-
-#
-# from numpy import random, linalg, sqrt, kron
-# from numpy import real, conj, transpose
-# from utils import draw_ansatz_tree
-# from qiskit_ionq import IonQProvider
-# from qiskit_braket_provider import AWSBraketProvider
-
-# unitaries = [['X', 'Z'], ['Z', 'X'], ['I', 'Y']]
-# alphas = [1.6317321653264614, 0.2249104575899552, 1.7897631234464821]
-
-# BRAKET_DEVICE = 'SV1'
-# BRAKET_DEVICE = 'Aria 1'
-# BRAKET_DEVICE = 'Harmony'
 
 def __number_to_base(n, b):
     if n == 0:
@@ -83,39 +69,112 @@ def __expand_breadth_first(instance, ansatz_tree):
     ansatz_tree.append(child_node)
     return ansatz_tree
 
-def __calculate_gradient_overlaps(instance, alphas, ansatz_tree):
-    coeffs = instance.get_coeffs()
+def __obtain_child_space(instance, ansatz_tree):
+    parent_node = ansatz_tree[-1]
+    num_term = instance.get_num_term()
+    unitaries = instance.get_unitaries()
+    child_space = [parent_node + unitaries[i] for i in range(num_term)]
+    return child_space
+
+
+
+def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree):
+    r"""
+        Estimate all independent inner products that appear in term 1 and term 2.
+        In total, we are going to estimate
+            total number of elements = num_term * (tree_depth * num_term * num_term + num_term)
+    """
     unitaries = instance.get_unitaries()
     n = instance.get_num_qubit()
     num_term = instance.get_num_term()
+    Ub = instance.get_ub()
     tree_depth = len(ansatz_tree)
     parent_node = ansatz_tree[-1]
     child_space = [parent_node + unitaries[i] for i in range(num_term)]
+
+    # construct the structure of the list to record the indexes
+    grad_overlap_idxes = [
+            [
+                [
+                    [
+                        [
+                            0 for _ in range(num_term)
+                        ]
+                        for _ in range(num_term)
+                    ]
+                     for _ in range(tree_depth)
+                ],
+                [
+                    0 for _ in range(num_term)
+                ]
+            ] for _ in range(num_term)]
+
+    for i in range(num_term):
+        term_idxes = grad_overlap_idxes[i]
+        term_1_idxes = term_idxes[0]
+        term_2_idxes = term_idxes[1]
+        U1 = child_space[i]
+        for j in range(tree_depth):
+            for k in range(num_term):
+                for l in range(num_term):
+                    U2 = unitaries[k] + unitaries[l] + ansatz_tree[j]
+                    inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+                    term_1_idxes[j][k][l] = inner_product
+        for j in range(num_term):
+            U2 = unitaries[j]
+            inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+            term_2_idxes[j] = inner_product
+    return grad_overlap_idxes
+
+
+def __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes, backend='eigens'):
+    r"""
+        Retrieve the results of all submitted tasks.
+    """
+    if backend == 'eigens':
+        return grad_overlap_idxes
+    else: # hardware retrieval
+        return 0
+
+def __calculate_gradient_overlaps(instance, alphas, ansatz_tree):
+    r"""
+        We would like to estimate the gradient overlap between each of the child nodes with respect to the parent node.
+            grad_overlap = 2 <child| A A x - 2 <child| A b
+    """
+    # submit the quantum tasks
+    grad_overlap_idxes = __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree)
+    # retrieve quantum tasks
+    grad_overlap_values = __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes)
+    # calculate gradient overlap
+    coeffs = instance.get_coeffs()
+    num_term = instance.get_num_term()
+    tree_depth = len(ansatz_tree)
     gradient_overlaps = [0 for _ in range(num_term)]
     for i in range(num_term):
+        term_values = grad_overlap_values[i]
+        term_1_values = term_values[0]
+        term_2_values = term_values[1]
         term_1 = 0
         for j in range(tree_depth):
             term_1_1 = 0
             for k in range(num_term):
                 for l in range(num_term):
-                    U1 = child_space[i]
-                    U2 = unitaries[k] + unitaries[l] + ansatz_tree[j]
-                    inner_product = Hadamard_test(n, U1, U2, real=None, backend='eigens', shots=None, device=None)
+                    inner_product = term_1_values[j][k][l]
                     term_1_1 += conj(coeffs[k]) * coeffs[l] * inner_product
             term_1 += alphas[j] * term_1_1
         term_2 = 0
         for j in range(num_term):
-            U1 = child_space[i]
-            U2 = unitaries[j]
-            inner_product = Hadamard_test(n, U1, U2, real=None, backend='eigens', shots=None, device=None)
+            inner_product = term_2_values[j]
             term_2 += coeffs[j] * inner_product
         gradient_overlap = abs(2 * term_1 - 2 * term_2)
         gradient_overlaps[i] = gradient_overlap
-    return child_space, gradient_overlaps
+    return gradient_overlaps
 
 def __expand_by_gradient(instance, alphas, ansatz_tree):
-    # Create child space and calculate gradient overlaps
-    child_space, gradient_overlaps = __calculate_gradient_overlaps(instance, alphas, ansatz_tree)
+    # construct child space
+    child_space = __obtain_child_space(instance, ansatz_tree)
+    # calculate gradient overlaps
+    gradient_overlaps = __calculate_gradient_overlaps(instance, alphas, ansatz_tree)
     # To consider the case when there are several candidates for the child node.
     max_index = [index for index, item in enumerate(gradient_overlaps) if item == max(gradient_overlaps)]
     idx = choice(max_index)

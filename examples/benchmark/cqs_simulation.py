@@ -24,81 +24,52 @@
     Execution of the program.
 """
 
-from cqs.object import CoeffMatrix
+from cqs.object import Instance, RandomInstance
 from numpy import real, array
 from cqs.optimization import solve_combination_parameters
-from cqs.local.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
-from cqs.expansion import expand_ansatz_tree
+from cqs.local.calculation import calculate_Q_r_by_eigens
+from cqs.local.expansion import expand_ansatz_tree_by_eigens
 
 import matplotlib.pyplot as plt
 
-# 1. Problem Setting
-# Generate the problem of solving a linear systems of equations.
-# Set the dimension of the coefficient matrix A on the left hand side of the equation.
-qubit_number = 5
-dim = 2 ** qubit_number
-# Set the number of terms of the coefficient matrix A on the left hand side of the equation.
-# According to assumption 1, the matrix A has the form of linear combination of known unitaries.
-# For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
-number_of_terms = 3
 
-# Total Budget of shots
-shots_total_budget = 10 ** 4
-# Expected error
-error = 0.1
 
-# Initialize the coefficient matrix
-A = CoeffMatrix(number_of_terms, dim, qubit_number)
-print('Qubits are tagged as:', ['Q' + str(i) for i in range(A.get_width())])
 
-# Generate A with the following way
-coeffs = [1, 0.5, 0.2]
-unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'Z', 'I', 'I']]]
-# Number of Hadamard tests in total: 636
-# So the total shot budget is: 636 * 11 =  6996
+def main_solver(instance, ansatz_tree, backend='eigens', frugal=False):
+    r"""
+        This function solves Ax=b when Ansatz tree is known to us.
+    """
+    Q, r = calculate_Q_r_by_eigens(instance, ansatz_tree)
+    vars = solve_combination_parameters(Q, r, which_opt=None)
+    print("combination parameters are:", vars)
+    return vars
 
-# coeffs =  [0.358, 0.011, -0.919, -0.987]
-# unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
 
-A.generate(which_form='Unitaries', given_unitaries=unitaries, given_coeffs=coeffs)
-print('Coefficients of the terms are:', coeffs)
-print('Decomposed unitaries are:', unitaries)
-B = sum([abs(coeff) for coeff in coeffs])
 
-# Values on the right hand side of the equation.
-b = array([1] + [0 for _ in range(dim - 1)])
-print('The vector on the right hand side of the equation is:', b)
 
-# 2. Initialization
-# Total iteration
-ITR = 3
-batch = shots_total_budget / (sum(list(i ** 2 for i in range(1, ITR + 1))))
-# Use a wise shot allocation method to display the shots
-Q_r_budgets = []
-loss_budgets = []
-gradient_budgets = []
-for itr in range(1, ITR + 1):
-    weight = itr ** 2
-    shot_budget = weight * batch
+def main_prober(instance, backend='eigens', ITR=None, frugal=False):
+    r"""
+        This function solves Ax=b when Ansatz tree is not known to us.
+        Thus we use expansion algorithms to probe the solution space,
+        including breadth-first search, gradient heuristic, etc.
+    """
+    # if ITR is None:
+    #     while True:
 
-    # Shot budget to calculate the matrix Q and vector r
-    Q_r_budget = int(0.4 * shot_budget)
-    Q_r_budgets.append(Q_r_budget)
 
-    # Shot budget to calculate the loss function
-    loss_budget = int(0.4 * shot_budget)
-    loss_budgets.append(loss_budget)
 
-    # Shot budget to calculate the gradient overlaps
-    gradient_budget = int(0.2 * shot_budget)
-    gradient_budgets.append(gradient_budget)
-
-# 3. Define the main function
-def main(backend='eigens', frugal=True):
     Itr = []
     Loss = []
-    # At the begining, the ansatz tree only contains |b>, so we define it as [[['I', 'I']]]
+    # At the begining, the ansatz tree only contains identity, so we define it as [[['I', 'I']]]
     ansatz_tree = [[['I' for _ in range(qubit_number)]]]
+
+
+
+
+
+
+
+
 
     for itr in range(1, ITR + 1):
         print("\n")
@@ -125,19 +96,28 @@ def main(backend='eigens', frugal=True):
                                          shots_budget=gradient_budgets[itr - 1], frugal=frugal)
     return Itr, Loss
 
-Itr, loss_list_hadamard_qibo = main(backend='ionq', frugal=False)
-# Itr, loss_list_hadamard_not_frugal = main(backend='ionq', frugal=False)
-Itr, loss_list_eigens = main(backend='eigens', frugal=False)
 
-plt.title("CQS: Loss - Depth")
-plt.plot(Itr, [0 for _ in Itr], 'b--')
-plt.plot(Itr, loss_list_hadamard_qibo, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
-# plt.plot(Itr, loss_list_hadamard_qibo, '-', color='black', linewidth=2.5, label='Loss Function by Hadamard Tests')
-plt.plot(Itr, loss_list_eigens, '-', color='red', linewidth=2.5, label='Loss Function by Matrix Multiplication')
-plt.legend()
-plt.xlabel("Depth")
-plt.ylabel("Loss")
-plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -162,6 +142,81 @@ plt.show()
 ########################################################################################################################
 #                                           CODES OF OLD VERSIONS
 ########################################################################################################################
+# # Problem Setting
+# # Generate the problem of solving a linear systems of equations.
+# # Set the dimension of the coefficient matrix A on the left hand side of the equation.
+# qubit_number = 5
+# dim = 2 ** qubit_number
+# # Set the number of terms of the coefficient matrix A on the left hand side of the equation.
+# # According to assumption 1, the matrix A has the form of linear combination of known unitaries.
+# # For the near-term consideration, the number of terms are in the order of magnitude of ploy(log(dimension)).
+# number_of_terms = 3
+#
+# # Total Budget of shots
+# shots_total_budget = 10 ** 4
+# # Expected error
+# error = 0.1
+#
+# # Initialize the coefficient matrix
+# A = CoeffMatrix(number_of_terms, dim, qubit_number)
+# print('Qubits are tagged as:', ['Q' + str(i) for i in range(A.get_width())])
+#
+# # Generate A with the following way
+# coeffs = [1, 0.5, 0.2]
+# unitaries = [[['I', 'I', 'I', 'I', 'I']], [['X', 'Z', 'I', 'I', 'I']], [['X', 'I', 'Z', 'I', 'I']]]
+# # Number of Hadamard tests in total: 636
+# # So the total shot budget is: 636 * 11 =  6996
+#
+# # coeffs =  [0.358, 0.011, -0.919, -0.987]
+# # unitaries = [[['I', 'Y', 'X', 'I', 'Y']], [['Z', 'X', 'Y', 'X', 'I']], [['X', 'X', 'Z', 'I', 'X']], [['Z', 'I', 'X', 'Z', 'Z']]]
+#
+# A.generate(which_form='Unitaries', given_unitaries=unitaries, given_coeffs=coeffs)
+# print('Coefficients of the terms are:', coeffs)
+# print('Decomposed unitaries are:', unitaries)
+# B = sum([abs(coeff) for coeff in coeffs])
+#
+# # Values on the right hand side of the equation.
+# b = array([1] + [0 for _ in range(dim - 1)])
+# print('The vector on the right hand side of the equation is:', b)
+#
+# # 2. Initialization
+# # Total iteration
+# ITR = 3
+# batch = shots_total_budget / (sum(list(i ** 2 for i in range(1, ITR + 1))))
+# # Use a wise shot allocation method to display the shots
+# Q_r_budgets = []
+# loss_budgets = []
+# gradient_budgets = []
+# for itr in range(1, ITR + 1):
+#     weight = itr ** 2
+#     shot_budget = weight * batch
+#
+#     # Shot budget to calculate the matrix Q and vector r
+#     Q_r_budget = int(0.4 * shot_budget)
+#     Q_r_budgets.append(Q_r_budget)
+#
+#     # Shot budget to calculate the loss function
+#     loss_budget = int(0.4 * shot_budget)
+#     loss_budgets.append(loss_budget)
+#
+#     # Shot budget to calculate the gradient overlaps
+#     gradient_budget = int(0.2 * shot_budget)
+#     gradient_budgets.append(gradient_budget)
+#
+# Itr, loss_list_hadamard_qibo = main(backend='ionq', frugal=False)
+# # Itr, loss_list_hadamard_not_frugal = main(backend='ionq', frugal=False)
+# Itr, loss_list_eigens = main(backend='eigens', frugal=False)
+#
+# plt.title("CQS: Loss - Depth")
+# plt.plot(Itr, [0 for _ in Itr], 'b--')
+# plt.plot(Itr, loss_list_hadamard_qibo, 'g-', linewidth=2.5, label='Loss Function by Hadamard Tests with frugal method')
+# # plt.plot(Itr, loss_list_hadamard_qibo, '-', color='black', linewidth=2.5, label='Loss Function by Hadamard Tests')
+# plt.plot(Itr, loss_list_eigens, '-', color='red', linewidth=2.5, label='Loss Function by Matrix Multiplication')
+# plt.legend()
+# plt.xlabel("Depth")
+# plt.ylabel("Loss")
+# plt.show()
+
 # xiufan_token = 'd383594cc2f9b3c7baf90b70b11f658c2df3ede2f534e571cc73d5e01f70e7a23620b4384594db7660ded289e864f137f3be56f05f39b9a113545ad90b11a302'
 # IBMProvider.save_account(xiufan_token)
 

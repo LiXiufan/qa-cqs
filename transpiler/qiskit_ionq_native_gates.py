@@ -10,7 +10,7 @@ class VirtualZGate(Gate):
     Mathematically, it performs the following unitary operation:
 
         U = [[exp(-i * π * theta),  0]
-             [0,  exp(i * π * theta)]]
+             [0,  exp(i * π * theta)]]+
 
     The `theta` parameter determines the phase shift applied to the qubit.
 

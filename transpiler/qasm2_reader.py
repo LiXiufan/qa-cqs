@@ -1,24 +1,28 @@
 from qiskit import QuantumCircuit  # Import the QuantumCircuit class from Qiskit
-from transpiler.qiskit_custom_gate_definitions import VirtualZGate,GPIGate,GPI2Gate,FullMSGate,PartialMSGate
+from transpiler.qiskit_ionq_native_gates import VirtualZGate, GPIGate, GPI2Gate, FullMSGate, \
+    PartialMSGate
 import numpy as np
 from braket.circuits import Circuit
 
-#all parameters are supposed to be 2pi periodic
+
+# all parameters are supposed to be 2pi periodic
 def normalize_param(param):
-    new_param=param
-    while new_param>2*np.pi:
-        new_param-=2*np.pi
-    while new_param<0:
-        new_param+=2*np.pi
+    new_param = param
+    while new_param > 2 * np.pi:
+        new_param -= 2 * np.pi
+    while new_param < 0:
+        new_param += 2 * np.pi
     return new_param
 
+
 def normalize_theta(param):
-    new_param=param
-    while new_param>np.pi/2:
-        new_param-=np.pi/2
-    while new_param<0:
-        new_param+=np.pi/2
+    new_param = param
+    while new_param > np.pi / 2:
+        new_param -= np.pi / 2
+    while new_param < 0:
+        new_param += np.pi / 2
     return new_param
+
 
 def load_qasm(file_path):
     """
@@ -58,20 +62,20 @@ def load_qasm(file_path):
         gate, *args = tokens
         if "(" in gate:  # Parameterized gate
             gate_name, param = gate.split("(")
-            #TWO qubit parametrized
+            # TWO qubit parametrized
             if gate_name == "fullMS":
                 q1 = int(args[1].replace("q[", "").replace("],", "").replace("];", ""))
                 q2 = int(args[2].replace("q[", "").replace("];", ""))
-                phi1=normalize_param(float(param.split(",")[0]))
-                phi2=normalize_param(float(args[0].split(")")[0]))
-                qc.append(FullMSGate(phi1,phi2 ), [q1,q2])
+                phi1 = normalize_param(float(param.split(",")[0]))
+                phi2 = normalize_param(float(args[0].split(")")[0]))
+                qc.append(FullMSGate(phi1, phi2), [q1, q2])
             elif gate_name == "partialMS":
                 q1 = int(args[2].replace("q[", "").replace("],", "").replace("];", ""))
                 q2 = int(args[3].replace("q[", "").replace("];", ""))
-                phi1=normalize_param(float(param.split(",")[0]))
-                phi2=normalize_param(float(args[0].split(",")[0]))
-                theta=normalize_theta(float(args[1].split(")")[0]))
-                qc.append(PartialMSGate(phi1,phi2,theta), [q1,q2])
+                phi1 = normalize_param(float(param.split(",")[0]))
+                phi2 = normalize_param(float(args[0].split(",")[0]))
+                theta = normalize_theta(float(args[1].split(")")[0]))
+                qc.append(PartialMSGate(phi1, phi2, theta), [q1, q2])
             else:
                 param = normalize_param(float(param.rstrip(");")))
 
@@ -135,7 +139,7 @@ def from_qasm2_to_braket(file_name: str):
                 braket_circuit.ms(q1, q2, theta, phi1, phi2)
             else:
                 qubit = [int(q.replace("q[", "").replace("],", "").replace("];", "")) for q in args][0]
-                param = float(param.rstrip(");"))
+                param = normalize_param(float(param.rstrip(");")))
 
                 if gate_name == "GPI":
                     braket_circuit.gpi(qubit, param)
@@ -144,10 +148,8 @@ def from_qasm2_to_braket(file_name: str):
 
                     braket_circuit.gpi2(qubit, param)
 
-
     return Circuit().add_verbatim_box(braket_circuit)
 
 
 if __name__ == "__main__":
     print(from_qasm2_to_braket("circuit.qasm"))
-

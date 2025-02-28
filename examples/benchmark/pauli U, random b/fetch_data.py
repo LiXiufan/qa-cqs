@@ -23,3 +23,36 @@
 """
     This file is used for benchmarking a larger number of instances.
 """
+import csv
+
+def __num_to_pauli(num_list):
+    paulis = ['I', 'X', 'Y', 'Z']
+    pauli_list = [paulis[int(i)] for i in num_list]
+    return pauli_list
+
+# def cqs_main():
+
+
+with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+    reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+    for i, row in enumerate(reader):
+        if 3 > i > 0:
+            row_clean = [j for j in ''.join(row).split('"') if j != ',']
+            nLc = row_clean[0].split(',')
+            n = int(nLc[0])
+            print("qubit number is:", n)
+            L = int(nLc[1])
+            print("term number is:", L)
+            cond_number = float(nLc[2])
+            print('condition number is', cond_number)
+            pauli_strings = [__num_to_pauli(l) for l in eval(row_clean[1])]
+            print('Pauli strings are:', pauli_strings)
+            coeffs = [float(i) for i in eval(row_clean[2])]
+            print('coefficients are:', coeffs)
+            print()
+
+
+
+
+
+

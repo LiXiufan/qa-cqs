@@ -1,17 +1,24 @@
 # Select the Hardware
+from hardware.eigens_acc.eigens_access import Hadamard_test as Hadamard_test_eigens
+from hardware.qiskit_acc.qiskit_noiseless import Hadamard_test as Hadamard_test_qiskit_noiseless
+from hardware.qiskit_acc.qiskit_noisy import Hadamard_test as Hadamard_test_qiskit_noisy
+
 # from hardware.Qibo.qibo_access import Hadamard_test as Hadamard_test_qibo
 # from hardware.Qibo.noisy_access import Hadamard_test as Hadamard_test_qibo_noisy
 # from hardware.IonQ.ionq_access import Hadamard_test as Hadamard_test_ionq
-from hardware.Eigens.eigens_access import Hadamard_test as Hadamard_test_eigens
 # from hardware.IBMQ.ibmq_access import Hadamard_test as Hadamard_test_ibmq
-# from hardware.Matrix.matrix_access import Hadmard_test as Hadmard_test_matrix
 # from hardware.AWS.braket_access import Hadamard_test as Hadamard_test_braket
 # from hardware.AWS.noisy_access import Hadamard_test as Hadamard_test_braket_noisy
 
 
-def Hadamard_test(n, U1, U2, Ub, real='r', backend='eigens', shots=1024, device='SV1'):
+def Hadamard_test(n, U1, U2, Ub, real='r', backend='eigens', shots=1024, noise_level=None, device='SV1'):
     if backend == 'eigens':
         return Hadamard_test_eigens(n, U1, U2, Ub)
+    elif backend == 'qiskit-noiseless':
+        return Hadamard_test_qiskit_noiseless(n, U1, U2, Ub, shots)
+    elif backend == 'qiskit-noisy':
+        return Hadamard_test_qiskit_noisy(n, U1, U2, Ub, shots, noise_level)
+
     # elif backend == 'braket':
     #     return Hadamard_test_braket(n, U1, U2, real=real, device=device, shots=shots)
     # elif backend == 'qibo':
@@ -22,14 +29,13 @@ def Hadamard_test(n, U1, U2, Ub, real='r', backend='eigens', shots=1024, device=
     #     return Hadamard_test_ionq(U, real, shots)
     # elif backend == 'ibmq':
     #     return Hadamard_test_ibmq(U, real, shots)
-    # elif backend == 'matrix':
-    #     return Hadmard_test_matrix(U, real)
+
     #
     # elif backend == 'braket_noisy':
     #     return Hadamard_test_braket_noisy(U, real, shots)
     else:
         raise ValueError("The backend should be in ['qibo', 'qibo_noisy', "
-                         "'ionq', 'eigens', 'ibmq', 'matrix', 'braket', 'braket_noisy']")
+                         "'ionq', 'eigens', 'ibmq', 'qiskit', 'braket', 'braket_noisy']")
 
 
 

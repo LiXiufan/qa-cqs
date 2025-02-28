@@ -1,5 +1,5 @@
 from qiskit.circuit.random import random_circuit
-from transpiler.Noisy_simulations import transpiler, get_noisy_counts
+from transpiler.noisy_simulations import transpiler, get_noisy_counts
 
 
 
