@@ -1,6 +1,7 @@
 from qiskit import QuantumCircuit  # Import the QuantumCircuit class from Qiskit
 from transpiler.qiskit_custom_gate_definitions import VirtualZGate,GPIGate,GPI2Gate,FullMSGate,PartialMSGate
 import numpy as np
+from braket.circuits import Circuit
 
 #all parameters are supposed to be 2pi periodic
 def normalize_param(param):
@@ -91,4 +92,62 @@ def load_qasm(file_path):
             qc.cx(q1, q2)
 
     return qc  # Return the constructed QuantumCircuit
+
+
+def from_qasm2_to_braket(file_name: str):
+    """
+    Convert an OpenQASM 2.0 file to an Amazon Braket Circuit.
+
+    Args:
+        file_name (str): Path to the OpenQASM file.
+
+    Returns:
+        Circuit: A Braket Circuit containing the parsed gates.
+
+    Supports only: GPI, GPI2, MS
+    """
+    with open(file_name, "r") as f:
+        lines = f.readlines()
+
+    num_qubits = 0
+    for line in lines:
+        if "qreg q[" in line:
+            num_qubits = int(line.split("[")[1].split("]")[0])
+            break
+
+    braket_circuit = Circuit()
+
+    for line in lines:
+        tokens = line.strip().split()
+        if not tokens or tokens[0] in {"OPENQASM", "include", "qreg"}:
+            continue  # Skip metadata lines
+
+        gate, *args = tokens
+
+        if "(" in gate:  # Parameterized gate
+            gate_name, param = gate.split("(")
+            if gate_name == "partialMS":
+                q1 = int(args[2].replace("q[", "").replace("],", "").replace("];", ""))
+                q2 = int(args[3].replace("q[", "").replace("];", ""))
+                phi1 = normalize_param(float(param.split(",")[0]))
+                phi2 = normalize_param(float(args[0].split(",")[0]))
+                theta = normalize_theta(float(args[1].split(")")[0]))
+                braket_circuit.ms(q1, q2, theta, phi1, phi2)
+            else:
+                qubit = [int(q.replace("q[", "").replace("],", "").replace("];", "")) for q in args][0]
+                param = float(param.rstrip(");"))
+
+                if gate_name == "GPI":
+                    braket_circuit.gpi(qubit, param)
+
+                elif gate_name == "GPI2":
+
+                    braket_circuit.gpi2(qubit, param)
+
+
+    return Circuit().add_verbatim_box(braket_circuit)
+
+
+if __name__ == "__main__":
+    print(from_qasm2_to_braket("circuit.qasm"))
 
