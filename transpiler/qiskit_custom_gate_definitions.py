@@ -36,8 +36,8 @@ class VirtualZGate(Gate):
         """
         theta = self.params[0]  # Extract the parameter (rotation angle)
         return np.array([
-            [np.exp(-1j * np.pi * theta), 0],  # Phase shift for |0⟩ state
-            [0, np.exp(1j * np.pi * theta)]   # Phase shift for |1⟩ state
+            [np.exp(-1j *  theta), 0],  # Phase shift for |0⟩ state
+            [0, np.exp(1j *  theta)]   # Phase shift for |1⟩ state
         ])
 
 
@@ -76,8 +76,8 @@ class GPIGate(Gate):
         """
         phi = self.params[0]  # Extract the phase parameter
         return np.array([
-            [0, np.exp(-2j * np.pi * phi)],
-            [np.exp(2j * np.pi * phi), 0]
+            [0, np.exp(-1j * phi)],
+            [np.exp(1j * phi), 0]
         ])
 
 
@@ -116,8 +116,8 @@ class GPI2Gate(Gate):
         """
         phi = self.params[0]  # Extract the phase parameter
         factor = 1 / np.sqrt(2)  # Normalization factor
-        exp_pos = -1j * np.exp(2j * np.pi * phi)
-        exp_neg = -1j * np.exp(-2j * np.pi * phi)
+        exp_pos = -1j * np.exp(1j * phi)
+        exp_neg = -1j * np.exp(-1j * phi)
 
         return factor * np.array([
             [1, exp_neg],
@@ -164,10 +164,10 @@ class FullMSGate(Gate):
         phi0, phi1 = self.params  # Extract the phase parameters
         factor = 1 / np.sqrt(2)  # Normalization factor
 
-        exp_14 = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        exp_23 = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
-        exp_32 = -1j * np.exp(2j * np.pi * (phi0 - phi1))
-        exp_41 = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+        exp_14 = -1j * np.exp(-1j * (phi0 + phi1))
+        exp_23 = -1j * np.exp(-1j * (phi0 - phi1))
+        exp_32 = -1j * np.exp(1j * (phi0 - phi1))
+        exp_41 = -1j * np.exp(1j * (phi0 + phi1))
 
         return factor * np.array([
             [1, 0, 0, exp_14],
@@ -218,13 +218,13 @@ class PartialMSGate(Gate):
             np.ndarray: The 4x4 unitary matrix corresponding to the PartialMS Gate.
         """
         phi0, phi1, theta = self.params  # Extract parameters
-        cos_theta = np.cos(np.pi * theta)
-        sin_theta = np.sin(np.pi * theta)
+        cos_theta = np.cos(theta/2)
+        sin_theta = np.sin(theta/2)
 
-        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
-        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
-        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
+        e_pos = -1j * np.exp(1j * (phi0 + phi1))
+        e_neg = -1j * np.exp(-1j * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(1j * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-1j * (phi0 - phi1))
 
         return np.array([
             [cos_theta, 0, 0, e_neg * sin_theta],

@@ -17,6 +17,16 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
+#we want theta from 0 to pi
+def normalize_theta(param):
+    new_param=param
+    while new_param>np.pi/2:
+        new_param-=np.pi/2
+        print(new_param)
+    while new_param<0:
+        new_param+=np.pi/2
+        print(new_param)
+    return new_param
 
 class VirtualZGate(QubitGate, DifferentiableUnitary, CachedClass):
     """
@@ -109,8 +119,8 @@ class GPIGate(QubitGate, DifferentiableUnitary, CachedClass):
         phi = params[0]  # Extract the phase parameter
         return UnitaryMatrix(
             [
-                [0, np.exp(-2j * np.pi * phi)],  # Upper diagonal element
-                [np.exp(2j * np.pi * phi), 0]   # Lower diagonal element
+                [0, np.exp(-1j * phi)],  # Upper diagonal element
+                [np.exp(1j * phi), 0]   # Lower diagonal element
             ]
         )
 
@@ -127,8 +137,8 @@ class GPIGate(QubitGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         phi = params[0]
-        d_exp_pos = 2j * np.pi * np.exp(2j * np.pi * phi)  # Derivative w.r.t. ϕ
-        d_exp_neg = -2j * np.pi * np.exp(-2j * np.pi * phi)
+        d_exp_pos = 1j * np.exp(1j * phi)  # Derivative w.r.t. ϕ
+        d_exp_neg = -1j * np.exp(-1j * phi)
 
         return np.array(
             [
@@ -178,8 +188,8 @@ class GPI2Gate(QubitGate, DifferentiableUnitary, CachedClass):
 
         phi = params[0]  # Extract the phase parameter ϕ.
         factor = 1 / np.sqrt(2)  # Normalization factor.
-        exp_pos = -1j * np.exp(2j * np.pi * phi)  # e^(2πiϕ) * -i
-        exp_neg = -1j * np.exp(-2j * np.pi * phi)  # e^(-2πiϕ) * -i
+        exp_pos = -1j * np.exp(1j * phi)  # e^(2πiϕ) * -i
+        exp_neg = -1j * np.exp(-1j * phi)  # e^(-2πiϕ) * -i
 
         return UnitaryMatrix(
             factor * np.array([
@@ -207,8 +217,8 @@ class GPI2Gate(QubitGate, DifferentiableUnitary, CachedClass):
         factor = 1 / np.sqrt(2)  # Normalization factor.
 
         # Compute the derivatives of the exponential terms.
-        d_exp_pos = 2 * np.pi * np.exp(2j * np.pi * phi)
-        d_exp_neg = -2 * np.pi * np.exp(-2j * np.pi * phi)
+        d_exp_pos = np.exp(1j * phi)
+        d_exp_neg = -np.exp(-1j * phi)
 
         return np.array(
             [
@@ -261,10 +271,10 @@ class FullMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         phi0, phi1 = params  # Extract the phase parameters
         factor = 1 / np.sqrt(2)  # Normalization factor
 
-        exp_14 = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        exp_23 = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
-        exp_32 = -1j * np.exp(2j * np.pi * (phi0 - phi1))
-        exp_41 = -1j * np.exp(2j * np.pi * (phi0 + phi1))
+        exp_14 = -1j * np.exp(-1j * (phi0 + phi1))
+        exp_23 = -1j * np.exp(-1j * (phi0 - phi1))
+        exp_32 = -1j * np.exp(1j * (phi0 - phi1))
+        exp_41 = -1j * np.exp(1j * (phi0 + phi1))
 
         return UnitaryMatrix(
             factor * np.array([
@@ -291,10 +301,10 @@ class FullMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         factor = 1 / np.sqrt(2)
 
         # Compute derivatives
-        d_14 = -2 * np.pi * np.exp(-2j * np.pi * (phi0 + phi1))
-        d_21 = -2 * np.pi * np.exp(-2j * np.pi * (phi0 - phi1))
-        d_32 = 2 * np.pi * np.exp(2j * np.pi * (phi0 - phi1))
-        d_41 = 2 * np.pi * np.exp(2j * np.pi * (phi0 + phi1))
+        d_14 = -np.exp(-1j * (phi0 + phi1))
+        d_21 = -np.exp(-1j * (phi0 - phi1))
+        d_32 = np.exp(1j * (phi0 - phi1))
+        d_41 = np.exp(1j * (phi0 + phi1))
 
         return np.array([
             factor * np.array([
@@ -339,6 +349,7 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
     _num_params = 3  # It has three parameters: ϕ₀, ϕ₁, and θ
     _qasm_name = 'partialMS'  # Custom gate name for QASM compatibility
 
+
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Return the unitary matrix representation of the PartialMS gate.
@@ -352,12 +363,12 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         phi0, phi1, theta = params  # Extract the phase parameters and rotation angle
-        cos = np.cos(np.pi * theta)
-        sin = np.sin(np.pi * theta)
-        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
-        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
-        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
+        cos = np.cos(normalize_theta(theta)/2)
+        sin = np.sin(normalize_theta(theta)/2)
+        e_pos = -1j * np.exp(1j * (phi0 + phi1))
+        e_neg = -1j * np.exp(-1j * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(1j * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-1j * (phi0 - phi1))
 
         return UnitaryMatrix(
             np.array([
@@ -381,20 +392,20 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         phi0, phi1, theta = params
-        cos = np.cos(np.pi * theta)
-        sin = np.sin(np.pi * theta)
-        e_pos = -1j * np.exp(2j * np.pi * (phi0 + phi1))
-        e_neg = -1j * np.exp(-2j * np.pi * (phi0 + phi1))
-        e_diff_pos = -1j * np.exp(2j * np.pi * (phi0 - phi1))
-        e_diff_neg = -1j * np.exp(-2j * np.pi * (phi0 - phi1))
+        cos = np.cos(normalize_theta(theta)/2)
+        sin = np.sin(normalize_theta(theta)/2)
+        e_pos = -1j * np.exp(1j * (phi0 + phi1))
+        e_neg = -1j * np.exp(-1j * (phi0 + phi1))
+        e_diff_pos = -1j * np.exp(1j * (phi0 - phi1))
+        e_diff_neg = -1j * np.exp(-1j * (phi0 - phi1))
 
         # Compute derivatives
-        d_cos = -np.pi * sin
-        d_sin = np.pi * cos
-        d_e_pos = 2 * np.pi * np.exp(2j * np.pi * (phi0 + phi1))
-        d_e_neg = -2 * np.pi * np.exp(-2j * np.pi * (phi0 + phi1))
-        d_e_diff_pos = 2 * np.pi * np.exp(2j * np.pi * (phi0 - phi1))
-        d_e_diff_neg = -2 * np.pi * np.exp(-2j * np.pi * (phi0 - phi1))
+        d_cos = -sin/2
+        d_sin = cos/2
+        d_e_pos = np.exp(1j * (phi0 + phi1))
+        d_e_neg = -np.exp(-1j * (phi0 + phi1))
+        d_e_diff_pos = np.exp(1j * (phi0 - phi1))
+        d_e_diff_neg = -np.exp(-1j * (phi0 - phi1))
 
         return np.array([
             np.array([
@@ -416,6 +427,8 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
                 [d_sin * e_pos, 0, 0, d_cos]
             ], dtype=np.complex128)
         ])
+
+
 
 
 
