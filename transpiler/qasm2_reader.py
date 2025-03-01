@@ -136,7 +136,7 @@ def from_qasm2_to_braket(file_name: str):
                 phi1 = normalize_param(float(param.split(",")[0]))
                 phi2 = normalize_param(float(args[0].split(",")[0]))
                 theta = normalize_theta(float(args[1].split(")")[0]))
-                braket_circuit.ms(q1, q2, theta, phi1, phi2)
+                braket_circuit.ms(q1, q2, phi1, phi2,theta)
             else:
                 qubit = [int(q.replace("q[", "").replace("],", "").replace("];", "")) for q in args][0]
                 param = normalize_param(float(param.rstrip(");")))
