@@ -1,0 +1,51 @@
+{
+    "braketSchemaHeader": {
+        "name": "braket.task_result.gate_model_task_result",
+        "version": "1"
+    },
+    "measurementProbabilities": {
+        "000": 1
+    },
+    "resultTypes": [],
+    "measuredQubits": [
+        0,
+        1,
+        2
+    ],
+    "taskMetadata": {
+        "braketSchemaHeader": {
+            "name": "braket.task_result.task_metadata",
+            "version": "1"
+        },
+        "id": "arn:aws:braket:us-east-1:225989338317:quantum-task/49d5567e-a2d7-4ecb-b056-7d3e55ac8e1e",
+        "shots": 2,
+        "deviceId": "arn:aws:braket:us-east-1::device/qpu/ionq/Aria-1",
+        "deviceParameters": {
+            "braketSchemaHeader": {
+                "name": "braket.device_schema.ionq.ionq_device_parameters",
+                "version": "1"
+            },
+            "paradigmParameters": {
+                "braketSchemaHeader": {
+                    "name": "braket.device_schema.gate_model_parameters",
+                    "version": "1"
+                },
+                "qubitCount": 3,
+                "disableQubitRewiring": true
+            }
+        },
+        "createdAt": "2025-03-03T07:43:00.337Z",
+        "endedAt": "2025-03-03T07:44:04.595Z",
+        "status": "COMPLETED"
+    },
+    "additionalMetadata": {
+        "action": {
+            "braketSchemaHeader": {
+                "name": "braket.ir.openqasm.program",
+                "version": "1"
+            },
+            "source": "OPENQASM 3.0;\nbit[3] b;\n#pragma braket verbatim\nbox{\nms(0.09323460622838287, 4.283654366005686, 1.554024993479465) $0, $2;\ngpi(1.6598823918300858) $0;\nms(0.15693363221684048, 5.0700656731202685, 0.8043823852187568) $0, $2;\ngpi2(2.2404610302186128) $0;\nms(3.7320823518484167, 3.4820822865932364, 1.0376110254453792) $1, $2;\ngpi2(0.7404614187687416) $0;\ngpi(5.266347934173948) $1;\ngpi(5.813584916136197) $0;\nms(5.550613519166252, 3.7320822867803503, 0.6084073471672369) $1, $2;\ngpi2(2.173178630491621) $1;\ngpi2(4.173178558719089) $1;\ngpi(1.0353628224374787) $1;\n}\nb[0] = measure $0;\nb[1] = measure $2;\nb[2] = measure $1;",
+            "inputs": {}
+        }
+    }
+}

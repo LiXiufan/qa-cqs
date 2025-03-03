@@ -27,7 +27,7 @@
 from cqs.object import Instance, RandomInstance
 from numpy import real, array
 from cqs.optimization import solve_combination_parameters
-from cqs.local.calculation import calculate_Q_r_by_eigens
+from cqs.local.calculation import calculate_Q_r
 from cqs.local.expansion import expand_ansatz_tree_by_eigens
 
 import matplotlib.pyplot as plt
@@ -35,11 +35,13 @@ import matplotlib.pyplot as plt
 
 
 
-def main_solver(instance, ansatz_tree, backend='eigens', frugal=False):
+def main_solver(instance, ansatz_tree, backend=None, frugal=False):
     r"""
         This function solves Ax=b when Ansatz tree is known to us.
     """
-    Q, r = calculate_Q_r_by_eigens(instance, ansatz_tree)
+    if backend is None:
+        backend = 'eigens'
+    Q, r = calculate_Q_r(instance, ansatz_tree, backend=backend)
     vars = solve_combination_parameters(Q, r, which_opt=None)
     print("combination parameters are:", vars)
     return vars
@@ -47,12 +49,28 @@ def main_solver(instance, ansatz_tree, backend='eigens', frugal=False):
 
 
 
-def main_prober(instance, backend='eigens', ITR=None, frugal=False):
+
+
+def main_prober(instance, backend=None, ITR=None, frugal=False):
     r"""
         This function solves Ax=b when Ansatz tree is not known to us.
         Thus we use expansion algorithms to probe the solution space,
         including breadth-first search, gradient heuristic, etc.
     """
+    if backend is None:
+        backend = 'eigens'
+    n = instance.get_num_qubit()
+    ansatz_tree = []
+    if backend in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
+        if backend
+        main_solver(instance)
+
+    else:
+        return ValueError("Please try to build it using `main-solver`.")
+
+
+
+
     # if ITR is None:
     #     while True:
 

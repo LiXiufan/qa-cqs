@@ -48,7 +48,7 @@ def U_list_dagger(U):
 
 
 
-def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree):
+def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend=None):
     r"""
         Estimate all independent inner products that appear in matrix `V_dagger_V`.
         Note that we only estimate all upper triangular elements and all diagonal elements.
@@ -57,6 +57,8 @@ def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree):
         In total, we are going to estimate
             total number of elements = 1/2 * (`tree_depth` + 1) * `tree_depth`
     """
+    if backend is None:
+        backend = 'eigens'
     unitaries = instance.get_unitaries()
     n = instance.get_num_qubit()
     num_term = instance.get_num_term()
@@ -70,15 +72,17 @@ def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree):
                 for l in range(num_term):
                     U1 = unitaries[k] + ansatz_tree[i]
                     U2 = unitaries[l] + ansatz_tree[j]
-                    inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+                    inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend=backend, shots=None, device=None)
                     element_idxes[k][l] = inner_product
             ip_idxes[i][j] = element_idxes
     return ip_idxes
 
-def __submit_all_inner_products_in_q(instance, ansatz_tree):
+def __submit_all_inner_products_in_q(instance, ansatz_tree, backend=None):
     r"""
         Estimate all independent inner products that appear in vector `q`
     """
+    if backend is None:
+        backend = 'eigens'
     unitaries = instance.get_unitaries()
     n = instance.get_num_qubit()
     num_term = instance.get_num_term()
@@ -90,7 +94,7 @@ def __submit_all_inner_products_in_q(instance, ansatz_tree):
         for k in range(num_term):
             U1 = ansatz_tree[i]
             U2 = unitaries[k]
-            inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+            inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend=backend, shots=None, device=None)
             element_idxes[k]= inner_product
         ip_idxes[i] = element_idxes
     return ip_idxes
@@ -113,7 +117,7 @@ def __retrieve__all_inner_products_in_q(instance, ansatz_tree, ip_idxes, backend
     else: # hardware retrieval
         return 0
 
-def __estimate_V_dagger_V(instance, ansatz_tree, loss_type=None):
+def __estimate_V_dagger_V(instance, ansatz_tree, backend=None, loss_type=None):
     r"""
         Estimate all independent inner products that appear in matrix `V_dagger_V`.
         Note that we only estimate all upper triangular elements and all diagonal elements.
@@ -122,13 +126,15 @@ def __estimate_V_dagger_V(instance, ansatz_tree, loss_type=None):
         In total, we are going to estimate
             total number of elements = 1/2 * (`tree_depth` + 1) * `tree_depth`
     """
+    if backend is None:
+        backend = 'eigens'
     num_term = instance.get_num_term()
     coeffs = instance.get_coeffs()
     tree_depth = len(ansatz_tree)
     V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
 
-    ip_idxes = __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree)
-    ip_values = __retrieve__all_inner_products_in_V_dagger_V(instance, ansatz_tree, ip_idxes)
+    ip_idxes = __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend=backend)
+    ip_values = __retrieve__all_inner_products_in_V_dagger_V(instance, ansatz_tree, ip_idxes, backend=backend)
 
     for i in range(tree_depth):
         for j in range(i, tree_depth):
@@ -145,19 +151,21 @@ def __estimate_V_dagger_V(instance, ansatz_tree, loss_type=None):
         V_dagger_V += 1/2 * identity(tree_depth, dtype='complex128')
     return V_dagger_V
 
-def __estimate_q(instance, ansatz_tree):
+def __estimate_q(instance, ansatz_tree, backend=None):
     r"""
         Estimate all independent inner products that appear in vector `q`.
         In total, we are going to estimate
             total number of elements = `tree_depth`
     """
+    if backend is None:
+        backend = 'eigens'
     num_term = instance.get_num_term()
     coeffs = instance.get_coeffs()
     tree_depth = len(ansatz_tree)
     q = zeros((tree_depth, 1), dtype='complex128')
 
-    ip_idxes = __submit_all_inner_products_in_q(instance, ansatz_tree)
-    ip_values = __retrieve__all_inner_products_in_q(instance, ansatz_tree, ip_idxes)
+    ip_idxes = __submit_all_inner_products_in_q(instance, ansatz_tree, backend=backend)
+    ip_values = __retrieve__all_inner_products_in_q(instance, ansatz_tree, ip_idxes, backend=backend)
 
     for i in range(tree_depth):
         element_values = ip_values[i]
@@ -183,7 +191,7 @@ def __reshape_to_Q_r(matrix, vector):
     return Q, r
 
 
-def calculate_Q_r_by_eigens(instance, ansatz_tree, loss_type=None):
+def calculate_Q_r(instance, ansatz_tree, backend=None, loss_type=None):
     r"""
         Please note that the objective function of CVXOPT has the form:   1/2  x^T P x  +   q^T x
         But our objective function is:                                         z^T Q z  - 2 r^T z + 1
@@ -194,9 +202,21 @@ def calculate_Q_r_by_eigens(instance, ansatz_tree, loss_type=None):
     :param q:
     :return: Q, r
     """
-    V_dagger_V = __estimate_V_dagger_V(instance, ansatz_tree, loss_type)
-    q = __estimate_q(instance, ansatz_tree)
-    return __reshape_to_Q_r(V_dagger_V, q)
+    if backend is None:
+        backend = 'eigens'
+    V_dagger_V = __estimate_V_dagger_V(instance, ansatz_tree, backend=backend, loss_type=loss_type)
+    q = __estimate_q(instance, ansatz_tree, backend=backend)
+    Q, r = __reshape_to_Q_r(V_dagger_V, q)
+    return Q, r
+
+
+
+
+
+
+
+
+
 
 
 

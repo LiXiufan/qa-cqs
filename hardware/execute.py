@@ -34,8 +34,8 @@ def Hadamard_test(n, U1, U2, Ub, real='r', backend='eigens', shots=1024, noise_l
     # elif backend == 'braket_noisy':
     #     return Hadamard_test_braket_noisy(U, real, shots)
     else:
-        raise ValueError("The backend should be in ['qibo', 'qibo_noisy', "
-                         "'ionq', 'eigens', 'ibmq', 'qiskit', 'braket', 'braket_noisy']")
+        raise ValueError("The backend should be in ['eigens', 'qiskit-noiseless', "
+                         "'qiskit-noisy', 'ibmq', 'qiskit', 'braket', 'braket_noisy']")
 
 
 

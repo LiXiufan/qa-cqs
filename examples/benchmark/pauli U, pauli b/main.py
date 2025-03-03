@@ -24,7 +24,7 @@
     Benchmark problem sizes and algorithm scalability.
 """
 from cqs.object import RandomInstance
-from cqs.local.calculation import calculate_Q_r_by_eigens
+from cqs.local.calculation import calculate_Q_r
 from cqs.optimization import solve_combination_parameters
 from cqs.local.expansion import expand_ansatz_tree_by_eigens
 
@@ -58,7 +58,7 @@ for n in NRANGE:
             loss = 1
             while loss >= convergence_loss:
                 itr += 1
-                Q, r = calculate_Q_r_by_eigens(instance1, ansatz_tree)
+                Q, r = calculate_Q_r(instance1, ansatz_tree, backend='eigens')
                 loss, alphas = solve_combination_parameters(Q, r)
                 ITR.append(itr)
                 LOSS.append(loss)
