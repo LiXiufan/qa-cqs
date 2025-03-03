@@ -148,7 +148,7 @@ def from_qasm2_to_braket(file_name: str):
 
                     braket_circuit.gpi2(qubit, param)
 
-    return Circuit().add_verbatim_box(braket_circuit)
+    return Circuit().add_verbatim_box(braket_circuit).measure(range(num_qubits))
 
 
 if __name__ == "__main__":
