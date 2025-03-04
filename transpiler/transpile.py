@@ -17,8 +17,8 @@ def transpile_circuit(qiskit_qc, device, optimization_level=2):
     Args:
         qiskit_qc (QuantumCircuit): The input Qiskit quantum circuit.
         device (str): The target device from IONQ devices with corresponding IONQ_gate_set.
-            option 1: Aria {PartialMSGate(), GPIGate(), GPI2Gate()}
-            option 2: Forte {ZZGate(), GPIGate(), GPI2Gate()}
+            option 1: "Aria" {PartialMSGate(), GPIGate(), GPI2Gate()}
+            option 2: "Forte" {ZZGate(), GPIGate(), GPI2Gate()}
     Returns:
         QuantumCircuit: The transpiled Qiskit quantum circuit with only MS gates.
     """
