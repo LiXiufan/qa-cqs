@@ -28,91 +28,79 @@ from cqs.object import Instance, RandomInstance
 from numpy import real, array
 from cqs.optimization import solve_combination_parameters
 from cqs.local.calculation import calculate_Q_r
-from cqs.local.expansion import expand_ansatz_tree_by_eigens
-
+from cqs.local.expansion import expand_ansatz_tree
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 import matplotlib.pyplot as plt
 
 
 
 
-def main_solver(instance, ansatz_tree, backend=None, frugal=False):
+def main_solver(instance, ansatz_tree, **kwargs):
     r"""
         This function solves Ax=b when Ansatz tree is known to us.
     """
-    if backend is None:
-        backend = 'eigens'
-    Q, r = calculate_Q_r(instance, ansatz_tree, backend=backend)
-    vars = solve_combination_parameters(Q, r, which_opt=None)
-    print("combination parameters are:", vars)
-    return vars
+    # Performing Hadamard test to calculate Q and r
+    Q, r = calculate_Q_r(instance, ansatz_tree, **kwargs)
+    # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
+    loss, alphas = solve_combination_parameters(Q, r, which_opt=None)
+    print("loss:", loss)
+    print("combination parameters are:", alphas)
+    return loss, alphas
 
 
+def __solve_and_expand(instance, ansatz_tree, **kwargs):
+    loss, alphas = main_solver(instance, ansatz_tree, **kwargs)
+    new_ansatz_tree = expand_ansatz_tree(instance, alphas, ansatz_tree, **kwargs)
+    return loss, alphas, new_ansatz_tree
 
 
-
-
-def main_prober(instance, backend=None, ITR=None, frugal=False):
+def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
     r"""
         This function solves Ax=b when Ansatz tree is not known to us.
         Thus we use expansion algorithms to probe the solution space,
         including breadth-first search, gradient heuristic, etc.
     """
-    if backend is None:
-        backend = 'eigens'
     n = instance.get_num_qubit()
-    ansatz_tree = []
-    if backend in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
-        if backend
-        main_solver(instance)
+    # For eigens simulator, each unitary gate is a list of Pauli strings.
+    # For qiskit simulator, each unitary gate is a quantum circuit object in qiskit.
+    if backend not in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
+        return ValueError("We do not allow the calls of this function in real hardware execution, since the "
+                          "connection and execution takes time. Instead, we encourage the user to separate `submit`"
+                          "process and `retrieve` process. Please try to build it using `main-solver`.")
+    if eps is None:
+        eps = 0.01
 
+    # ansatz tree only contains identity at the beginning
+    if backend == 'eigens':
+        ansatz_tree = [[["I" for _ in range(n)]]]
     else:
-        return ValueError("Please try to build it using `main-solver`.")
+        qr = QuantumRegister(n, 'q')
+        id_cir = QuantumCircuit(qr)
+        id_cir.id(qr)
+        ansatz_tree = [id_cir]
 
-
-
-
-    # if ITR is None:
-    #     while True:
-
-
-
+    # main procedure
+    LOSS = []
     Itr = []
-    Loss = []
-    # At the begining, the ansatz tree only contains identity, so we define it as [[['I', 'I']]]
-    ansatz_tree = [[['I' for _ in range(qubit_number)]]]
+    itr_count = 0
+    loss = 1
+    alphas = 0
+    if ITR is None:
+        while loss > eps:
+            itr_count += 1
+            Itr.append(itr_count)
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=None, **kwargs)
+            print("loss:", loss)
+            LOSS.append(loss)
+    else:
+        for itr in range(1, ITR + 1):
+            Itr.append(itr)
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=None, **kwargs)
+            print("loss:", loss)
+            LOSS.append(loss)
+    print("combination parameters are:", alphas)
 
-
-
-
-
-
-
-
-
-    for itr in range(1, ITR + 1):
-        print("\n")
-        print("Itr:", itr, " Ansatz tree is:", ansatz_tree)
-        Itr.append(itr)
-        # Performing Hadamard test to calculate Q and r
-        Q, r = calculate_Q_r_by_Hadamrd_test(A, ansatz_tree, backend=backend, shots_budget=Q_r_budgets[itr - 1], frugal=frugal)
-        print("\n")
-        print("Itr:", itr, " Matrix Q is:\n", Q)
-        print("Itr:", itr, " Vector r is:\n", r)
-        print()
-
-        # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
-        vars = solve_combination_parameters(Q, r, which_opt=None)
-        print("Itr:", itr, " Combination parameters are:", vars)
-        print()
-
-        # Calculate the regression loss function to test if it is in the error range
-        loss = abs(real(
-            calculate_loss_function(A, vars, ansatz_tree, backend=backend, shots_budget=loss_budgets[itr - 1], frugal=frugal)))
-        print('Itr:', itr, "Loss:", loss)
-        Loss.append(loss)
-        ansatz_tree = expand_ansatz_tree(A, vars, ansatz_tree, backend=backend, draw_tree=False,
-                                         shots_budget=gradient_budgets[itr - 1], frugal=frugal)
-    return Itr, Loss
+    return Itr, LOSS
 
 
 

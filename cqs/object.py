@@ -53,7 +53,7 @@ class Instance:
     Users can also customize the A matrix with specific input.
     """
 
-    def __init__(self, n, K):
+    def __init__(self, n, K, kappa):
         r"""Set the A matrix and unitary for b.
 
         This class generates the coefficient matrix A and unitary b of the linear system of equations
@@ -71,6 +71,7 @@ class Instance:
         self.__coeffs = None  # coefficients
         self.__num_term = K
         self.__num_qubit = n
+        self.__cond_num = kappa
         self.__dim = 2 ** n
 
     def generate(self, given_coeffs=None, given_unitaries=None, given_ub=None):
@@ -100,6 +101,9 @@ class Instance:
 
     def get_ub(self):
         return self.__ub
+
+    def get_cond_num(self):
+        return self.__cond_num
 
     def __calculate_matrix(self):
         shape = (self.__dim, self.__dim)

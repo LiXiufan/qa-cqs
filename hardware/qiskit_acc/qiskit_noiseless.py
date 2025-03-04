@@ -88,8 +88,8 @@ def __run_circuit(cir, shots=1024):
 
 def Hadamard_test(n, U1, U2, Ub, shots=1024):
     cir_r = __build_circuit(n, U1, U2, Ub, alpha='r')
-    cir_i = __build_circuit(n, U1, U2, Ub, alpha='i')
     exp_r = __run_circuit(cir_r, shots=int(shots / 2))
+    cir_i = __build_circuit(n, U1, U2, Ub, alpha='i')
     exp_i = __run_circuit(cir_i, shots=int(shots / 2))
     expec = exp_r + exp_i * 1j
     return expec

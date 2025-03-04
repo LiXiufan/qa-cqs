@@ -31,22 +31,38 @@ if __name__ == "__main__":
     transpiled_qc = transpile_circuit(qc_qiskit, device="Aria", optimization_level=OPT_LEVEL)
     # GET NOISEless probabilities
     print(get_noisy_counts(transpiled_qc, 0, 0, 0))
+    transpiled_qc = transpile_circuit(qc_qiskit, device='Aria', optimization_level=OPT_LEVEL)
     # Print the transpiled circuit
     print("Transpiled Qiskit Circuit:")
     print(transpiled_qc)
-    # GET NOISY probabilities
-    print(get_noisy_counts(transpiled_qc, 0.02, 0, 0))
+
+    shots = 1024
+    # GET NOISEless probabilities without the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, 0, 0, 0, 0))
+    # GET NOISY probabilities without the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, 0, 0.02, 0, 0))
+    # GET NOISEless probabilities with the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, shots, 0, 0, 0))
+    # GET NOISY probabilities with the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, shots, 0.02, 0, 0))
 
     provider = IonQProvider()
     backend_native = provider.get_backend("simulator", gateset="native")
     transpiled_qc = transpile(qc_qiskit, backend=backend_native, optimization_level=OPT_LEVEL)
 
-    # GET NOISEless probabilities
-    print(get_noisy_counts(transpiled_qc, 0, 0, 0))
-
     # Print the transpiled circuit
     print("Transpiled Qiskit Circuit:")
     print(transpiled_qc)
 
+    # GET NOISEless probabilities without the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, 0, 0, 0, 0))
+    # GET NOISY probabilities without the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, 0, 0.02, 0, 0))
+    # GET NOISEless probabilities with the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, shots, 0, 0, 0))
+    # GET NOISY probabilities with the presence of shot noise
+    print(get_noisy_counts(transpiled_qc, shots, 0.02, 0, 0))
+
     # GET NOISY probabilities
-    print(get_noisy_counts(transpiled_qc, 0.02, 0.001, 0.1))
+    print("The worst noisy simulaton result is given by:")
+    print(get_noisy_counts(transpiled_qc, 1024, 0.02, 0.001, 0.1))

@@ -32,6 +32,7 @@ from random import choice
 
 from hardware.execute import Hadamard_test
 
+
 def __number_to_base(n, b):
     if n == 0:
         return [0]
@@ -57,6 +58,7 @@ def __get_idx(num_term, tree_depth):
         else:
             continue
 
+
 def __expand_breadth_first(instance, ansatz_tree):
     tree_depth = len(ansatz_tree)
     num_term = instance.get_num_term()
@@ -69,6 +71,7 @@ def __expand_breadth_first(instance, ansatz_tree):
     ansatz_tree.append(child_node)
     return ansatz_tree
 
+
 def __obtain_child_space(instance, ansatz_tree):
     parent_node = ansatz_tree[-1]
     num_term = instance.get_num_term()
@@ -77,13 +80,13 @@ def __obtain_child_space(instance, ansatz_tree):
     return child_space
 
 
-
-def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree):
+def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree, **kwargs):
     r"""
         Estimate all independent inner products that appear in term 1 and term 2.
         In total, we are going to estimate
             total number of elements = num_term * (tree_depth * num_term * num_term + num_term)
     """
+
     unitaries = instance.get_unitaries()
     n = instance.get_num_qubit()
     num_term = instance.get_num_term()
@@ -94,20 +97,20 @@ def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree):
 
     # construct the structure of the list to record the indexes
     grad_overlap_idxes = [
+        [
             [
                 [
                     [
-                        [
-                            0 for _ in range(num_term)
-                        ]
-                        for _ in range(num_term)
+                        0 for _ in range(num_term)
                     ]
-                     for _ in range(tree_depth)
-                ],
-                [
-                    0 for _ in range(num_term)
+                    for _ in range(num_term)
                 ]
-            ] for _ in range(num_term)]
+                for _ in range(tree_depth)
+            ],
+            [
+                0 for _ in range(num_term)
+            ]
+        ] for _ in range(num_term)]
 
     for i in range(num_term):
         term_idxes = grad_overlap_idxes[i]
@@ -118,33 +121,37 @@ def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree):
             for k in range(num_term):
                 for l in range(num_term):
                     U2 = unitaries[k] + unitaries[l] + ansatz_tree[j]
-                    inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+                    inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
                     term_1_idxes[j][k][l] = inner_product
         for j in range(num_term):
             U2 = unitaries[j]
-            inner_product = Hadamard_test(n, U1, U2, Ub, real=None, backend='eigens', shots=None, device=None)
+            inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
             term_2_idxes[j] = inner_product
     return grad_overlap_idxes
 
 
-def __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes, backend='eigens'):
+def __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes, backend=None):
     r"""
         Retrieve the results of all submitted tasks.
     """
+    if backend is None:
+        backend = 'eigens'
     if backend == 'eigens':
         return grad_overlap_idxes
-    else: # hardware retrieval
+    else:  # hardware retrieval
         return 0
 
-def __calculate_gradient_overlaps(instance, alphas, ansatz_tree):
+
+def __calculate_gradient_overlaps(instance, alphas, ansatz_tree, backend=None, **kwargs):
     r"""
         We would like to estimate the gradient overlap between each of the child nodes with respect to the parent node.
             grad_overlap = 2 <child| A A x - 2 <child| A b
     """
     # submit the quantum tasks
-    grad_overlap_idxes = __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree)
+    grad_overlap_idxes = __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree, backend=backend, **kwargs)
     # retrieve quantum tasks
-    grad_overlap_values = __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes)
+    grad_overlap_values = __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_overlap_idxes,
+                                                                         backend=backend)
     # calculate gradient overlap
     coeffs = instance.get_coeffs()
     num_term = instance.get_num_term()
@@ -170,11 +177,12 @@ def __calculate_gradient_overlaps(instance, alphas, ansatz_tree):
         gradient_overlaps[i] = gradient_overlap
     return gradient_overlaps
 
-def __expand_by_gradient(instance, alphas, ansatz_tree):
+
+def __expand_by_gradient(instance, alphas, ansatz_tree, **kwargs):
     # construct child space
     child_space = __obtain_child_space(instance, ansatz_tree)
     # calculate gradient overlaps
-    gradient_overlaps = __calculate_gradient_overlaps(instance, alphas, ansatz_tree)
+    gradient_overlaps = __calculate_gradient_overlaps(instance, alphas, ansatz_tree, **kwargs)
     # To consider the case when there are several candidates for the child node.
     max_index = [index for index, item in enumerate(gradient_overlaps) if item == max(gradient_overlaps)]
     idx = choice(max_index)
@@ -182,37 +190,18 @@ def __expand_by_gradient(instance, alphas, ansatz_tree):
     ansatz_tree.append(child_node_opt)
     return ansatz_tree
 
-def expand_ansatz_tree_by_eigens(instance, alphas, ansatz_tree, mtd=None):
+
+def expand_ansatz_tree(instance, alphas, ansatz_tree, mtd=None, **kwargs):
     if mtd is None:
         mtd = 'gradient'
-
     if mtd == 'breadth':
-        return __expand_breadth_first(instance, ansatz_tree)
+        ansatz_tree = __expand_breadth_first(instance, ansatz_tree)
     elif mtd == 'gradient':
-        return __expand_by_gradient(instance, alphas, ansatz_tree)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        ansatz_tree = __expand_by_gradient(instance, alphas, ansatz_tree, **kwargs)
+    else:
+        return ValueError(
+            "Please specify the Ansatz tree expansion method by setting `mtd` to be in ['breadth', 'gradient'].")
+    return ansatz_tree
 
 #
 # def expand_ansatz_tree(A, vars, ansatz_tree, loss_type=None, backend=None, draw_tree=False, shots_budget=1024,

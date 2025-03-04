@@ -25,9 +25,8 @@
     This is the matrix calculation using qiskit aer simulator.
 """
 
-from qiskit.quantum_info import Statevector
-from qiskit_aer import AerSimulator
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from transpiler.transpile import transpile_circuit, get_noisy_counts
 
 # Hadamard test
 def __build_circuit(n, U1, U2, Ub, alpha='r'):
@@ -60,47 +59,46 @@ def __build_circuit(n, U1, U2, Ub, alpha='r'):
     cir.measure(anc[0], cr[0])
     return cir
 
-def __run_circuit(cir, shots=1024):
-    # Transpile for simulator
-    simulator = AerSimulator()
-    cir = transpile(cir, simulator)
+
+
+def __run_circuit(qc, shots, **kwargs):
+    transpile_kwargs = {i: kwargs[i] for i in ['device', 'optimization_level'] if i in kwargs.keys()}
+    noisy_kwargs = {i: kwargs[i] for i in
+                    ['noise_level_two_qubit', 'noise_level_one_qubit', 'readout_error']
+                    if i in kwargs.keys()}
+    cir_native = transpile_circuit(qc=qc, **transpile_kwargs)
+    noisy_result = get_noisy_counts(qc=cir_native, shots=shots, **noisy_kwargs)
+    p0 = 0
+    p1 = 0
     if shots == 0:
-        # Run and get probabilities
-        cir.remove_final_measurements()
-        state_vec = Statevector(cir)
-        prob_zero_qubit = state_vec.probabilities([0])
-        p0 = prob_zero_qubit[0]
-        p1 = prob_zero_qubit[1]
+        p0 = sum(noisy_result[:int(len(noisy_result) / 2)])
+        p1 = sum(noisy_result[int(len(noisy_result) / 2):])
     else:
-        # Run and get counts
-        result = simulator.run(cir, shots=shots).result()
-        counts = result.get_counts(0)
-        if '0' not in counts.keys():
-            p0 = 0
-            p1 = 1
-        elif '1' not in counts.keys():
-            p0 = 1
-            p1 = 0
-        else:
-            p0 = counts['0'] / shots
-            p1 = counts['1'] / shots
+        noisy_result = {str(outcome): int(noisy_result[outcome]) for outcome in noisy_result.keys()}
+        count0 = []
+        count1 = []
+        for outcome in noisy_result.keys():
+            if outcome[0] == '0':
+                count0.append(noisy_result[outcome])
+            else:
+                count1.append(noisy_result[outcome])
+            if not count0:
+                p0 = 0
+                p1 = 1
+            elif not count1:
+                p0 = 1
+                p1 = 0
+            else:
+                p0 = sum(count0) / shots
+                p1 = sum(count1) / shots
     return p0 - p1
 
-def Hadamard_test(n, U1, U2, Ub, shots=1024, noise_level=None):
+
+def Hadamard_test(n, U1, U2, Ub, shots, **kwargs):
     # build circuit
     cir_r = __build_circuit(n, U1, U2, Ub, alpha='r')
+    exp_r = __run_circuit(cir_r, shots=int(shots / 2), **kwargs)
     cir_i = __build_circuit(n, U1, U2, Ub, alpha='i')
-
-
-
-
-
-
-
-
-    exp_r = __run_circuit(, shots=int(shots / 2))
-    exp_i = __run_circuit(, shots=int(shots / 2))
+    exp_i = __run_circuit(cir_i, shots=int(shots / 2), **kwargs)
     expec = exp_r + exp_i * 1j
     return expec
-
-
