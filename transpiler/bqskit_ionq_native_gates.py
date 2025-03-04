@@ -437,3 +437,83 @@ class PartialMSGate(QubitGate, DifferentiableUnitary, CachedClass):
                 [d_sin * e_pos, 0, 0, d_cos]
             ], dtype=np.complex128)
         ])
+
+
+class ZZGate(QubitGate, DifferentiableUnitary, CachedClass):
+    r"""
+    The ZZ gate, a two-qubit gate that applies a phase shift depending on the
+    computational basis states of two qubits.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        R_{ZZ}(\theta) = \exp(-i \frac{\theta}{2} Z \otimes Z) =
+        \begin{bmatrix}
+        e^{-i \theta / 2} & 0 & 0 & 0 \\
+        0 & e^{i \theta / 2} & 0 & 0 \\
+        0 & 0 & e^{i \theta / 2} & 0 \\
+        0 & 0 & 0 & e^{-i \theta / 2}
+        \end{bmatrix}
+
+    Attributes:
+        - θ (float): Rotation angle.
+    """
+
+    _num_qudits = 2  # This gate operates on two qubits.
+    _num_params = 1  # It has one parameter: θ (rotation angle).
+    _qasm_name = 'ZZ'  # Custom gate name for QASM compatibility.
+
+    def get_unitary(self, params=None) -> UnitaryMatrix:
+        """
+        Return the unitary matrix representation of the ZZ gate.
+
+        Args:
+            params (list[float]): List containing θ.
+
+        Returns:
+            UnitaryMatrix: A 4x4 unitary matrix implementing the ZZ gate.
+        """
+        if params is None:
+            params = []
+        self.check_parameters(params)
+
+        theta = normalize_theta(params[0])  # Normalize theta
+        exp_pos = np.exp(1j * theta / 2)
+        exp_neg = np.exp(-1j * theta / 2)
+
+        return UnitaryMatrix(
+            np.array([
+                [exp_neg, 0, 0, 0],
+                [0, exp_pos, 0, 0],
+                [0, 0, exp_pos, 0],
+                [0, 0, 0, exp_neg]
+            ])
+        )
+
+    def get_grad(self, params=None) -> npt.NDArray[np.complex128]:
+        """
+        Compute the gradient of the ZZ gate with respect to θ.
+
+        Args:
+            params (list[float]): List containing θ.
+
+        Returns:
+            np.ndarray: A (1, 4, 4) gradient matrix.
+        """
+        if params is None:
+            params = []
+        self.check_parameters(params)
+
+        theta = normalize_theta(params[0])  # Normalize theta
+        d_exp_pos = 1j / 2 * np.exp(1j * theta / 2)
+        d_exp_neg = -1j / 2 * np.exp(-1j * theta / 2)
+
+        return np.array([
+            np.array([
+                [d_exp_neg, 0, 0, 0],
+                [0, d_exp_pos, 0, 0],
+                [0, 0, d_exp_pos, 0],
+                [0, 0, 0, d_exp_neg]
+            ], dtype=np.complex128)
+        ])

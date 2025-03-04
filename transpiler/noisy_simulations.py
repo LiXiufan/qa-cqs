@@ -28,7 +28,7 @@ if __name__ == "__main__":
     print(qc_qiskit)
 
     # Transpile the Qiskit circuit to use MS gates
-    transpiled_qc = transpile_circuit(qc_qiskit, gate_set=IONQ_GATES, optimization_level=OPT_LEVEL)
+    transpiled_qc = transpile_circuit(qc_qiskit, device="Aria", optimization_level=OPT_LEVEL)
     # GET NOISEless probabilities
     print(get_noisy_counts(transpiled_qc, 0, 0, 0))
     # Print the transpiled circuit

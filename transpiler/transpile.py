@@ -5,30 +5,32 @@ from bqskit.ext import qiskit_to_bqskit
 import pennylane as qml
 from qiskit import QuantumCircuit
 
-from transpiler.bqskit_ionq_native_gates import GPIGate, GPI2Gate, PartialMSGate
+from transpiler.bqskit_ionq_native_gates import GPIGate, GPI2Gate, PartialMSGate,ZZGate
 from transpiler.qasm2_reader import load_qasm
+import numpy as np
 
-
-def transpile_circuit(qiskit_qc, gate_set=None, optimization_level=2):
+def transpile_circuit(qiskit_qc, device, optimization_level=2):
     """
     Transpiles a Qiskit quantum circuit to use only MS (Mølmer–Sørensen) gates
     using BQSKit, and returns the transpiled Qiskit circuit.
 
     Args:
         qiskit_qc (QuantumCircuit): The input Qiskit quantum circuit.
-        gate_set (set, optional): The target gate set for transpilation.
-                                  Defaults to IONQ_gate_set.
-
+        device (str): The target device from IONQ devices with corresponding IONQ_gate_set.
+            option 1: Aria {PartialMSGate(), GPIGate(), GPI2Gate()}
+            option 2: Forte {ZZGate(), GPIGate(), GPI2Gate()}
     Returns:
         QuantumCircuit: The transpiled Qiskit quantum circuit with only MS gates.
     """
 
     # Convert the Qiskit circuit to a BQSKit circuit
-    if gate_set is None:
+    if device == "Aria":
         gate_set = {PartialMSGate(), GPIGate(), GPI2Gate()}
+    elif device == "Forte":
+        gate_set = {ZZGate(), GPIGate(), GPI2Gate()}
     bqskit_qc = qiskit_to_bqskit(qiskit_qc)
 
-    def transpile_to_ms(circuit: Circuit) -> Circuit:
+    def transpile(circuit: Circuit) -> Circuit:
         """
         Transpiles a given BQSKit circuit to use only MS gates.
 
@@ -47,7 +49,7 @@ def transpile_circuit(qiskit_qc, gate_set=None, optimization_level=2):
         return compiled_circuit
 
     # Transpile the BQSKit circuit to use only MS gates
-    ms_circuit = transpile_to_ms(bqskit_qc)
+    ms_circuit = transpile(bqskit_qc)
 
     # Save the transpiled circuit as a QASM file
     ms_circuit.save("circuit.qasm")
@@ -78,7 +80,11 @@ def get_noisy_counts(qiskit_qc, noise_level_two_qubit, noise_level_one_qubit, re
         # Iterate through all operations in the circuit
         for op in tape.operations:
             # Apply each gate as a unitary operation
-            qml.QubitUnitary(op.parameters[0], wires=op.wires)
+
+            if op.name == "QubitUnitary":
+                qml.QubitUnitary(op.parameters[0], wires=op.wires)
+            elif op.name == "IsingZZ":
+                qml.IsingZZ(op.parameters[0], wires=op.wires)
 
             # Apply **1-qubit depolarizing noise** after every 1-qubit gate
             if len(op.wires) == 1:
@@ -99,3 +105,15 @@ def get_noisy_counts(qiskit_qc, noise_level_two_qubit, noise_level_one_qubit, re
     # Run the noisy circuit simulation and return the result
     noisy_result = noisy_circuit()
     return noisy_result
+
+if __name__ == "__main__":
+    qiskit_qc=load_qasm("circuit.qasm")
+    print(qiskit_qc)
+    qml_circuit = qml.from_qiskit(qiskit_qc)
+    print("Transpiled result", np.abs(qml.matrix(qml_circuit, wire_order=[0, 1])().T[0]) ** 2)  # check
+    print("Noisy     simulation result:", get_noisy_counts(qiskit_qc, 0.00, 0.000, 0.0))
+
+
+
+
+

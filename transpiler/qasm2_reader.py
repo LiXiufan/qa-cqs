@@ -76,6 +76,11 @@ def load_qasm(file_path):
                 phi2 = normalize_param(float(args[0].split(",")[0]))
                 theta = normalize_theta(float(args[1].split(")")[0]))
                 qc.append(PartialMSGate(phi1, phi2, theta), [q1, q2])
+            elif gate_name == "ZZ":
+                q1 = int(args[0].replace("q[", "").replace("],", "").replace("];", ""))
+                q2 = int(args[1].replace("q[", "").replace("];", ""))
+                theta = normalize_theta(float(param.split(")")[0]))
+                qc.rzz(theta,q1,q2)
             else:
                 param = normalize_param(float(param.rstrip(");")))
 
@@ -137,6 +142,11 @@ def from_qasm2_to_braket(file_name: str):
                 phi2 = normalize_param(float(args[0].split(",")[0]))
                 theta = normalize_theta(float(args[1].split(")")[0]))
                 braket_circuit.ms(q1, q2, phi1, phi2,theta)
+            elif gate_name == "ZZ":
+                q1 = int(args[0].replace("q[", "").replace("],", "").replace("];", ""))
+                q2 = int(args[1].replace("q[", "").replace("];", ""))
+                theta = normalize_theta(float(param.split(")")[0]))
+                braket_circuit.zz(q1,q2,theta)
             else:
                 qubit = [int(q.replace("q[", "").replace("],", "").replace("];", "")) for q in args][0]
                 param = normalize_param(float(param.rstrip(");")))
@@ -152,4 +162,5 @@ def from_qasm2_to_braket(file_name: str):
 
 
 if __name__ == "__main__":
+    # print(load_qasm("circuit.qasm"))
     print(from_qasm2_to_braket("circuit.qasm"))
