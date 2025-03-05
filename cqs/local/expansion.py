@@ -76,7 +76,7 @@ def __obtain_child_space(instance, ansatz_tree):
     parent_node = ansatz_tree[-1]
     num_term = instance.get_num_term()
     unitaries = instance.get_unitaries()
-    child_space = [parent_node + unitaries[i] for i in range(num_term)]
+    child_space = [parent_node.compose(unitaries[i], qubits=parent_node.qubits) for i in range(num_term)]
     return child_space
 
 
@@ -93,7 +93,7 @@ def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree, **kwargs)
     Ub = instance.get_ub()
     tree_depth = len(ansatz_tree)
     parent_node = ansatz_tree[-1]
-    child_space = [parent_node + unitaries[i] for i in range(num_term)]
+    child_space = [parent_node.compose(unitaries[i], qubits=parent_node.qubits) for i in range(num_term)]
 
     # construct the structure of the list to record the indexes
     grad_overlap_idxes = [
@@ -120,7 +120,7 @@ def __submit_all_inner_products_in_grad_overlap(instance, ansatz_tree, **kwargs)
         for j in range(tree_depth):
             for k in range(num_term):
                 for l in range(num_term):
-                    U2 = unitaries[k] + unitaries[l] + ansatz_tree[j]
+                    U2 = unitaries[k].compose(unitaries[l], qubits=unitaries[k].qubits).compose(ansatz_tree[j], qubits=unitaries[k].qubits)
                     inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
                     term_1_idxes[j][k][l] = inner_product
         for j in range(num_term):
@@ -136,7 +136,7 @@ def __retrieve__all_inner_products_in_grad_overlap(instance, ansatz_tree, grad_o
     """
     if backend is None:
         backend = 'eigens'
-    if backend == 'eigens':
+    if backend in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
         return grad_overlap_idxes
     else:  # hardware retrieval
         return 0

@@ -21,7 +21,7 @@ def Hadamard_test(n, U1, U2, Ub, real=None, backend=None, shots=None, **kwargs):
     elif backend == 'qiskit-noiseless':
         return Hadamard_test_qiskit_noiseless(n, U1, U2, Ub, shots)
     elif backend == 'qiskit-noisy':
-        return Hadamard_test(n, U1, U2, Ub, shots=shots, **kwargs)
+        return Hadamard_test_qiskit_noisy(n, U1, U2, Ub, shots=shots, **kwargs)
 
 
     # elif backend == 'braket':

@@ -80,7 +80,7 @@ class Instance:
         Args:
             given_coeffs (List): a list of coefficients
             given_unitaries (List): a list of unitaries
-            given_ub (List): a unitary that corresponds to the state |b>
+            given_ub (List / QuantumCircuit): a unitary that corresponds to the state |b>
         """
         # Use given input coefficients and unitaries
         self.__coeffs = given_coeffs

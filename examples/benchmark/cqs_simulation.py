@@ -89,13 +89,13 @@ def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
         while loss > eps:
             itr_count += 1
             Itr.append(itr_count)
-            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=None, **kwargs)
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
             print("loss:", loss)
             LOSS.append(loss)
     else:
         for itr in range(1, ITR + 1):
             Itr.append(itr)
-            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=None, **kwargs)
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
             print("loss:", loss)
             LOSS.append(loss)
     print("combination parameters are:", alphas)

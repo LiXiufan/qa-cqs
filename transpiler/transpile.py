@@ -45,7 +45,7 @@ def transpile_circuit(qc, device=None, optimization_level=3):
         model = MachineModel(circuit.num_qudits, gate_set=gate_set)
 
         # Compile the circuit with the given model at optimization level 2
-        compiled_circuit = compile(circuit, model, optimization_level=optimization_level)
+        compiled_circuit = compile(circuit, model, optimization_level=optimization_level,synthesis_epsilon=1e-4, max_synthesis_size=4)
 
         return compiled_circuit
 
