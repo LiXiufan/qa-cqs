@@ -58,7 +58,7 @@ def __num_to_pauli_circuit(num_list):
     return qc
 
 def create_random_circuit_in_native_gate(n, d):
-    ub = random_circuit(n, d, measure=False)
+    ub = random_circuit(num_qubits=n,max_operands=2, depth=d, measure=False)
     # ub = transpile_circuit(ub, device='Aria', optimization_level=2)
     return ub
 

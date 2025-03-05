@@ -27,7 +27,8 @@
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from transpiler.transpile import transpile_circuit, get_noisy_counts
-
+from qiskit_aer import AerSimulator
+from qiskit import transpile as transpile_qiskit
 # Hadamard test
 def __build_circuit(n, U1, U2, Ub, alpha='r'):
     r"""
@@ -57,6 +58,9 @@ def __build_circuit(n, U1, U2, Ub, alpha='r'):
         cir.sdg(anc[0])
     cir.h(anc[0])
     cir.measure(anc[0], cr[0])
+    backend = AerSimulator()
+    # Transpile for optimization
+    cir = transpile_qiskit(cir, backend, optimization_level=3)
     return cir
 
 
