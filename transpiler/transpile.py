@@ -9,7 +9,7 @@ from transpiler.bqskit_ionq_native_gates import GPIGate, GPI2Gate, PartialMSGate
 from transpiler.qasm2_reader import load_qasm
 import numpy as np
 
-def transpile_circuit(qc, device=None, optimization_level=3):
+def transpile_circuit(qc, device=None, optimization_level=2,synthesis_epsilon=1e-8,max_synthesis_size=2):
     """
     Transpiles a Qiskit quantum circuit to use only MS (Mølmer–Sørensen) gates
     using BQSKit, and returns the transpiled Qiskit circuit.
@@ -45,7 +45,7 @@ def transpile_circuit(qc, device=None, optimization_level=3):
         model = MachineModel(circuit.num_qudits, gate_set=gate_set)
 
         # Compile the circuit with the given model at optimization level 2
-        compiled_circuit = compile(circuit, model, optimization_level=optimization_level,synthesis_epsilon=1e-4, max_synthesis_size=4)
+        compiled_circuit = compile(circuit, model, optimization_level=optimization_level,synthesis_epsilon=synthesis_epsilon,max_synthesis_size=max_synthesis_size)
 
         return compiled_circuit
 
