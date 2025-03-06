@@ -32,7 +32,11 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
 
 from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_simulation import main_prober
+from examples.benchmark.cqs_simulation import main_prober, main_solver
+
+from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
+
+ITR = 5
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -66,41 +70,57 @@ def create_random_circuit_in_native_gate(n, d):
     return ub
 
 
+
 with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+    file_name_noiseless = 'instance_1_result_noiseless.txt'
+    file_name_hardware = 'instance_1_result_hardware.txt'
+
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
         if 3 > i > 0:
+            file_noiseless = open(file_name_noiseless, "a")
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
-            print("qubit number is:", n)
+            file_noiseless.writelines(['qubit number is:', str(n), '\n'])
             L = int(nLc[1])
-            print("term number is:", L)
+            file_noiseless.writelines(['term number is:', str(L), '\n'])
             kappa = float(nLc[2])
-            print('condition number is', kappa)
+            file_noiseless.writelines(['condition number is:', str(kappa), '\n'])
             pauli_strings = [__num_to_pauli_list(l) for l in eval(row_clean[1])]
-            print('Pauli strings are:', pauli_strings)
+            file_noiseless.writelines(['Pauli strings are:', str(pauli_strings), '\n'])
             pauli_circuits = [__num_to_pauli_circuit(l) for l in eval(row_clean[1])]
             coeffs = [float(i) for i in eval(row_clean[2])]
-            print('coefficients are:', coeffs)
-            print()
+            file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
 
             # circuit depth d
             d = 3
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
-            print('Ub is given by:', data_b.iloc[i].b)
-            print(ub)
+            file_noiseless.writelines(['ub is given by:', str(ub), '\n'])
+
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=None, shots=0, optimization_level=2)
-            print(Itr)
-            print(LOSS)
-            # matrix = instance.get_matrix()
-            # print("The first example returns with a matrix:")
-            # print(matrix)
-            # print()
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
+            print(ansatz_tree[0])
+            file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
+            file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
+            file_noiseless.writelines(['Ansatz tree is given by:', str(LOSS), '\n'])
+            for i, qc in enumerate(ansatz_tree):
+                file_noiseless.writelines(['U'+str(i+1)+":", str(qc), '\n'])
+            file_noiseless.close()
+
+
+            # Submit to hardware execution
+            file_hardware = open(file_name_hardware, "a")
+            V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2)
+            file_hardware.writelines(["Matrix V_dagger_V indexes are:\n", V_dagger_V_idxes])
+            q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2)
+            file_hardware.writelines(["Vector q indexes are:\n", q_idxes])
+            file_hardware.close()
+
+
 
 
 

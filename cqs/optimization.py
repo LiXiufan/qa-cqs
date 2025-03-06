@@ -83,7 +83,7 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
 
 
     elif which_opt == "ADAM":
-        Q = 2*torch.Tensor(Q)
+        Q = 2 * torch.Tensor(Q)
         r = (-2) * torch.Tensor(r)
 
         # Define the loss function L(x) = x^T Q x + r^T x
@@ -106,8 +106,8 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
             loss.backward()  # Compute gradients
             optimizer.step()  # Update x
             scheduler.step()  # Adjust learning rate
-            if epoch % 1000 == 0:
-                print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}")
+            # if epoch % 1000 == 0:
+            #     print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}")
         comb_params=comb_params.tolist()
 
         # Train x

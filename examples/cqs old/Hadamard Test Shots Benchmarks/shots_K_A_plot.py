@@ -27,7 +27,7 @@
 
 from numpy import conj, log10, sqrt, linalg, random
 from cqs.object import CoeffMatrix
-from cqs.calculation import calculate_Q_r_by_Hadamrd_test
+from cqs.local.calculation import calculate_Q_r_by_Hadamrd_test
 
 import matplotlib.pyplot as plt
 

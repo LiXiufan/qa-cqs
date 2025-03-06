@@ -1,8 +1,5 @@
-from cqs.expansion import expand_ansatz_tree
 from cqs.object import CoeffMatrix
 from cqs.expansion import optimize_with_stochastic_descend
-from cqs.calculation import verify_loss_function
-from numpy import array, log2, linalg
 
 import matplotlib.pyplot as plt
 

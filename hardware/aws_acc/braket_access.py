@@ -93,7 +93,7 @@ def Hadamard_test(n, U1, U2, Ub, shots, **kwargs):
     cir_r_id = __run_circuit(cir_r, shots=int(shots / 2), **kwargs)
     cir_i = __build_circuit(n, U1, U2, Ub, alpha='i')
     cir_i_id = __run_circuit(cir_i, shots=int(shots / 2), **kwargs)
-    cir_hadamard_test_id = [cir_r_id, cir_i_id]
+    cir_hadamard_test_id = (cir_r_id, cir_i_id)
     return cir_hadamard_test_id
 
 

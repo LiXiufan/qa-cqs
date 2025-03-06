@@ -32,7 +32,11 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
 
 from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_simulation import main_prober
+from examples.benchmark.cqs_simulation import main_prober, main_solver
+
+from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
+
+ITR = 5
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -66,6 +70,7 @@ def create_random_circuit_in_native_gate(n, d):
     return ub
 
 
+
 with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
@@ -91,12 +96,49 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
             print('Ub is given by:', data_b.iloc[i].b)
             print(ub)
+
+
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=None, shots=0, optimization_level=2)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
             print(Itr)
             print(LOSS)
+
+
+
+
+
+
+
+            print('Ansatz tree contains:')
+            for qc in ansatz_tree:
+                print(qc)
+
+            V_dagger_V = __estimate_V_dagger_V(instance, ansatz_tree, loss_type=loss_type, **kwargs)
+            q = __estimate_q(instance, ansatz_tree, **kwargs)
+            Q, r = __reshape_to_Q_r(V_dagger_V, q)
+
+
+
+            # Performing Hadamard test to calculate Q and r
+            Q, r = calculate_Q_r(instance, ansatz_tree, **kwargs)
+            # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
+            loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
+            print("loss:", loss)
+            print("combination parameters are:", alphas)
+
+
+
+
+
+            loss, alphas = main_solver(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2, optimization_level=2,
+                                       noise_level_two_qubit=0.01, noise_level_one_qubit=0, readout_error=0.1)
+            print(loss)
+            print(alphas)
+
+
+
             # matrix = instance.get_matrix()
             # print("The first example returns with a matrix:")
             # print(matrix)

@@ -25,14 +25,10 @@
 """
 
 from cqs.object import CoeffMatrix
-from numpy import array, linalg
-from numpy import log2, log10
-from numpy import sqrt, kron, transpose, conj, real, imag, append
+from numpy import real
 from cqs.optimization import solve_combination_parameters
-from cqs.calculation import calculate_Q_r_by_Hadamrd_test, gate_to_matrix, zero_state, calculate_loss_function, verify_loss_function
+from cqs.local.calculation import calculate_Q_r_by_Hadamrd_test, calculate_loss_function
 from cqs.expansion import expand_ansatz_tree
-from utils import write_running_data
-from qiskit_ibm_provider import IBMProvider
 
 import matplotlib.pyplot as plt
 

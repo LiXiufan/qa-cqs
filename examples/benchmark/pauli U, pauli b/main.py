@@ -24,7 +24,7 @@
     Benchmark problem sizes and algorithm scalability.
 """
 from cqs.object import RandomInstance
-from cqs.calculation import calculate_Q_r
+from cqs.local.calculation import calculate_Q_r
 from cqs.optimization import solve_combination_parameters
 from cqs.expansion import expand_ansatz_tree_by_eigens
 

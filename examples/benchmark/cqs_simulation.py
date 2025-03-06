@@ -25,7 +25,7 @@
 """
 
 from cqs.optimization import solve_combination_parameters
-from cqs.calculation import calculate_Q_r
+from cqs.local.calculation import calculate_Q_r
 from cqs.expansion import expand_ansatz_tree
 from qiskit import QuantumCircuit, QuantumRegister
 
