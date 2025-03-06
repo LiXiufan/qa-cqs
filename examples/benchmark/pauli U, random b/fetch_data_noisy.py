@@ -30,7 +30,7 @@ from qiskit.circuit.random import random_circuit
 import qiskit.qasm3 as qasm3
 from instances_b.reader_b import read_csv_b
 from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_simulation import main_prober
+from examples.benchmark.cqs_simulation import main_prober, main_solver
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -93,13 +93,18 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS = main_prober(instance, backend='qiskit-noisy', shots=0, optimization_level=2, noise_level_two_qubit=0.02, noise_level_one_qubit=0, readout_error=0.1)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noisy',ITR=5,
+                                    shots=0, optimization_level=2,
+                                    noise_level_two_qubit=0.02, noise_level_one_qubit=0, readout_error=0.1)
             print(Itr)
             print(LOSS)
-            # matrix = instance.get_matrix()
-            # print("The first example returns with a matrix:")
-            # print(matrix)
-            # print()
+            print('ANsatz tree contains:')
+            for qc in ansatz_tree:
+                print(qc)
+
+            loss, alphas = main_solver(instance, ansatz_tree, backend='qiskit-noisy', shots=1000, optimization_level=2)
+            print(loss)
+            print(alphas)
 
 
 

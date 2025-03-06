@@ -25,13 +25,9 @@
     Required shots: to arrive at an error smaller than 0.1.
 """
 
-
-
-from hardware.Qibo.qibo_access import Hadamard_test
-from cqs.local.calculation import H_mat, X_mat, I_mat, Z_mat, Y_mat, zero_state
-from numpy import kron, conj, transpose, log10, sqrt, linalg, random
+from numpy import conj, log10, sqrt, linalg, random
 from cqs.object import CoeffMatrix
-from cqs.local.calculation import get_unitary, calculate_Q_r_by_Hadamrd_test
+from cqs.calculation import calculate_Q_r_by_Hadamrd_test
 
 import matplotlib.pyplot as plt
 

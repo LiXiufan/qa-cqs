@@ -48,7 +48,7 @@ def U_list_dagger(U):
     return U[::-1]
 
 
-def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
+def submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
     r"""
         Estimate all independent inner products that appear in matrix `V_dagger_V`.
         Note that we only estimate all upper triangular elements and all diagonal elements.
@@ -77,7 +77,7 @@ def __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
     return ip_idxes
 
 
-def __submit_all_inner_products_in_q(instance, ansatz_tree, **kwargs):
+def submit_all_inner_products_in_q(instance, ansatz_tree, **kwargs):
     r"""
         Estimate all independent inner products that appear in vector `q`
     """
@@ -133,7 +133,7 @@ def __estimate_V_dagger_V(instance, ansatz_tree, loss_type=None, backend=None, *
     tree_depth = len(ansatz_tree)
     V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
 
-    ip_idxes = __submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend=backend, **kwargs)
+    ip_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend=backend, **kwargs)
     ip_values = __retrieve__all_inner_products_in_V_dagger_V(instance, ansatz_tree, ip_idxes, backend=backend)
 
     for i in range(tree_depth):
@@ -164,7 +164,7 @@ def __estimate_q(instance, ansatz_tree, backend=None, **kwargs):
     tree_depth = len(ansatz_tree)
     q = zeros((tree_depth, 1), dtype='complex128')
 
-    ip_idxes = __submit_all_inner_products_in_q(instance, ansatz_tree, backend=backend, **kwargs)
+    ip_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend=backend, **kwargs)
     ip_values = __retrieve__all_inner_products_in_q(instance, ansatz_tree, ip_idxes, backend=backend)
 
     for i in range(tree_depth):

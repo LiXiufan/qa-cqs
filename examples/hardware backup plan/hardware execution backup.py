@@ -21,18 +21,16 @@
 # !/usr/bin/env python3
 
 """
-    This file is used for benchmarking a larger number of instances_A.
+    This file is used for benchmarking a larger number of instances.
 """
 import csv
-import qiskit.qasm3 as qasm3
-import pandas as pd
-from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
 
 from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_simulation import main_prober
+from examples.benchmark.cqs_simulation import main_prober, main_solver
+
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -67,10 +65,9 @@ def create_random_circuit_in_native_gate(n, d):
 
 
 with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
-    data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
@@ -88,15 +85,37 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
 
             # circuit depth d
             d = 3
-            ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
-            print('Ub is given by:', data_b.iloc[i].b)
-            print(ub)
+            ub = create_random_circuit_in_native_gate(n, d)
+            print('Ub is given by:', ub)
+
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
             Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=5, shots=0, optimization_level=2)
             print(Itr)
             print(LOSS)
+            for qc in ansatz_tree:
+                print(qc)
+
+
+            main_solver(instance, ansatz_tree, backend='aws-ionq-aria1', shots=1000, optimization_level=2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             # matrix = instance.get_matrix()
             # print("The first example returns with a matrix:")
             # print(matrix)
