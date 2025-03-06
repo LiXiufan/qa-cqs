@@ -6,7 +6,7 @@ def read_csv_b(n):
     working_dir = Path.cwd()
 
     # Move up the directory tree until reaching 'CQS_singapore'
-    while working_dir.name != "CQS_singapore" and working_dir != working_dir.parent:
+    while working_dir.name != "qa-cqs" and working_dir != working_dir.parent:
         working_dir = working_dir.parent
 
     # Construct the new file path relative to 'CQS_singapore'

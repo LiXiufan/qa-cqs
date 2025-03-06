@@ -35,7 +35,7 @@ from examples.benchmark.cqs_simulation import main_prober, main_solver
 
 from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
 
-ITR = 1
+ITR = 4
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -112,7 +112,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             file_noiseless.close()
 
             # Submit to hardware execution
-            V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend='aws-ionq-aria1', shots=4, optimization_level=2)
+            V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend='aws-ionq-aria1', shots=1024, optimization_level=2)
             # Create DataFrame
             V_dagger_V_df= pd.DataFrame(V_dagger_V_idxes)
             # Save to CSV
@@ -120,12 +120,12 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             V_dagger_V_df.to_csv(V_dagger_V_csv_filename, index=False)
 
             # Submit to hardware execution
-            q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend='aws-ionq-aria1', shots=4, optimization_level=2)
+            q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend='aws-ionq-aria1', shots=1024, optimization_level=2)
             # Create DataFrame
             q_df= pd.DataFrame(q_idxes)
             # Save to CSV
             q_csv_filename = "q_formal.csv"
-            q_df.to_csv(V_dagger_V_csv_filename, index=False)
+            q_df.to_csv(q_csv_filename, index=False)
 
 
 

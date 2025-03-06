@@ -35,12 +35,6 @@ from qiskit import transpile as transpile_qiskit
 from transpiler.transpile import transpile_circuit
 from transpiler.qasm2_reader import from_qasm2_to_braket
 
-BRAKET_DEVICE = 'SV1'
-# BRAKET_DEVICE = 'Lucy'
-# BRAKET_DEVICE = 'Aquila'
-# BRAKET_DEVICE = 'Harmony'
-# BRAKET_DEVICE = 'Aria 1'
-
 # Hadamard test
 def __build_circuit(n, U1, U2, Ub, alpha='r'):
     r"""
