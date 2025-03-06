@@ -69,7 +69,7 @@ def submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
     total_iterations = sum((tree_depth - i) * (num_term ** 2) for i in range(tree_depth))
 
     # Initialize tqdm progress bar
-    with tqdm(total=total_iterations, desc="Hadamard tests Progress") as pbar:
+    with tqdm(total=total_iterations, desc="Hadamard tests V_dagger_V Progress") as pbar:
         for i in range(tree_depth):
             for j in range(i, tree_depth):
                 element_idxes = [[0 for _ in range(num_term)] for _ in range(num_term)]
@@ -96,14 +96,17 @@ def submit_all_inner_products_in_q(instance, ansatz_tree, **kwargs):
     Ub = instance.get_ub()
     tree_depth = len(ansatz_tree)
     ip_idxes = [0 for _ in range(tree_depth)]
-    for i in range(tree_depth):
-        element_idxes = [0 for _ in range(num_term)]
-        for k in range(num_term):
-            U1 = ansatz_tree[i]
-            U2 = unitaries[k]
-            inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
-            element_idxes[k] = inner_product
-        ip_idxes[i] = element_idxes
+    # Initialize tqdm progress bar
+    with tqdm(total=tree_depth*num_term, desc="Hadamard tests q Progress") as pbar:
+        for i in range(tree_depth):
+            element_idxes = [0 for _ in range(num_term)]
+            for k in range(num_term):
+                U1 = ansatz_tree[i]
+                U2 = unitaries[k]
+                inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
+                element_idxes[k] = inner_product
+                pbar.update(1)  # Update global progress bar
+            ip_idxes[i] = element_idxes
     return ip_idxes
 
 
@@ -174,6 +177,7 @@ def __estimate_q(instance, ansatz_tree, backend=None, **kwargs):
 
     ip_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend=backend, **kwargs)
     ip_values = __retrieve__all_inner_products_in_q(instance, ansatz_tree, ip_idxes, backend=backend)
+
 
     for i in range(tree_depth):
         element_values = ip_values[i]
