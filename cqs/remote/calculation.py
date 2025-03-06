@@ -31,6 +31,7 @@ from numpy import append
 
 from numpy import real, imag
 from numpy import conj
+import pandas as pd
 
 from hardware.execute import Hadamard_test
 from braket.aws import AwsSession, AwsQuantumTask
@@ -120,8 +121,8 @@ def __retrieve_data(task):
     return p0 - p1
 
 
-def retrieve_data(task):
-    ip_r_task = AwsQuantumTask(arn=ip_r_id)
+def retrieve_data(ip_id):
+    task = AwsQuantumTask(arn=ip_id)
     status = task.state()
     if status != 'COMPLETED':
         return ValueError("I am sorry, your current task is in the status of", status)
@@ -130,7 +131,7 @@ def retrieve_data(task):
     return exp
 
 
-def retrive_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='eigens'):
+def retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='eigens'):
     r"""
         Estimate all independent inner products that appear in matrix `V_dagger_V`.
         Note that we only estimate all upper triangular elements and all diagonal elements.
@@ -142,7 +143,7 @@ def retrive_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='ei
     if backend in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
         return ip_idxes
 
-    elif backend in ['aws-ionq-aria1']:   # hardware retrieval
+    elif backend in ['aws-ionq-aria1']:
         num_term = instance.get_num_term()
         coeffs = instance.get_coeffs()
         tree_depth = len(ansatz_tree)
@@ -156,23 +157,6 @@ def retrive_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='ei
                         ip_id = element_idxes[k][l]
                         ip_r = retrieve_data(ip_id[0])
                         ip_i = retrieve_data(ip_id[1])
-
-
-
-                        ip_r_id = ip_id[0]
-                        ip_i_id = ip_id[1]
-                        ip_r_task = AwsQuantumTask(arn=ip_r_id)
-                        ip_i_task = AwsQuantumTask(arn=ip_i_id)
-                        status = ip_r_task.state()
-                        if status != 'COMPLETED':
-                            return ValueError("I am sorry, your current task is in the status of", status)
-                        else:
-                            ip_r = retrieve_data(ip_r_task)
-                        status = ip_i_task.state()
-                        if status != 'COMPLETED':
-                            return ValueError("I am sorry, your current task is in the status of", status)
-                        else:
-                            ip_i = retrieve_data(ip_i_task)
                         inner_product = ip_r + 1j * ip_i
                         item += conj(coeffs[k]) * coeffs[l] * inner_product
                 V_dagger_V[i][j] = item
@@ -199,13 +183,10 @@ def retrieve_and_estimate_q(instance, ansatz_tree, ip_idxes, backend='eigens'):
             element_idxes = ip_idxes[i]
             item = 0
             for k in range(num_term):
-                inner_product_id = element_idxes[k]
-                inner_product_task = AwsQuantumTask(arn=inner_product_id)
-                status = inner_product_task.state()
-                if status != 'COMPLETED':
-                    return ValueError("I am sorry, your current task is in the status of", status)
-                else:
-                    inner_product = retrieve_data(inner_product_task)
+                ip_id = element_idxes[k]
+                ip_r = retrieve_data(ip_id[0])
+                ip_i = retrieve_data(ip_id[1])
+                inner_product = ip_r + 1j * ip_i
                 item += conj(coeffs[k]) * inner_product
             q[i][0] = item
         return q

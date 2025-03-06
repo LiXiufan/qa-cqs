@@ -24,11 +24,13 @@
     Access to the AWS Braket Simulator and the Quantum Hardware.
 """
 
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit_aer import AerSimulator
 from braket.aws import AwsDevice
 from qiskit_braket_provider import AWSBraketProvider
 from braket.circuits import Circuit
+
+from qiskit import transpile as transpile_qiskit
 
 from transpiler.transpile import transpile_circuit
 from transpiler.qasm2_reader import from_qasm2_to_braket
@@ -70,7 +72,7 @@ def __build_circuit(n, U1, U2, Ub, alpha='r'):
     cir.measure(anc[0], cr[0])
     backend = AerSimulator()
     # Transpile for optimization
-    cir = transpile(cir, backend, optimization_level=3)
+    cir = transpile_qiskit(cir, backend, optimization_level=2)
     return cir
 
 
