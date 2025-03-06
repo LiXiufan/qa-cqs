@@ -24,15 +24,10 @@
     Execution of the program.
 """
 
-from cqs.object import Instance, RandomInstance
-from numpy import real, array
 from cqs.optimization import solve_combination_parameters
-from cqs.local.calculation import calculate_Q_r
-from cqs.local.expansion import expand_ansatz_tree
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
-import matplotlib.pyplot as plt
-
-
+from cqs.calculation import calculate_Q_r
+from cqs.expansion import expand_ansatz_tree
+from qiskit import QuantumCircuit, QuantumRegister
 
 
 def main_solver(instance, ansatz_tree, **kwargs):
@@ -90,17 +85,17 @@ def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
             itr_count += 1
             Itr.append(itr_count)
             loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
-            print("loss:", loss)
+            # print("loss:", loss)
             LOSS.append(loss)
     else:
         for itr in range(1, ITR + 1):
             Itr.append(itr)
             loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
-            print("loss:", loss)
+            # print("loss:", loss)
             LOSS.append(loss)
-    print("combination parameters are:", alphas)
+    # print("combination parameters are:", alphas)
 
-    return Itr, LOSS
+    return Itr, LOSS, ansatz_tree
 
 
 

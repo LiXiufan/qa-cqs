@@ -2,7 +2,7 @@
 from hardware.eigens_acc.eigens_access import Hadamard_test as Hadamard_test_eigens
 from hardware.qiskit_acc.qiskit_noiseless import Hadamard_test as Hadamard_test_qiskit_noiseless
 from hardware.qiskit_acc.qiskit_noisy import Hadamard_test as Hadamard_test_qiskit_noisy
-
+from hardware.aws_acc.braket_access import Hadamard_test as Hadamard_test_aws
 
 # from hardware.Qibo.qibo_access import Hadamard_test as Hadamard_test_qibo
 # from hardware.Qibo.noisy_access import Hadamard_test as Hadamard_test_qibo_noisy
@@ -22,6 +22,8 @@ def Hadamard_test(n, U1, U2, Ub, real=None, backend=None, shots=None, **kwargs):
         return Hadamard_test_qiskit_noiseless(n, U1, U2, Ub, shots)
     elif backend == 'qiskit-noisy':
         return Hadamard_test_qiskit_noisy(n, U1, U2, Ub, shots=shots, **kwargs)
+    elif backend == 'aws-ionq-aria1':
+        return Hadamard_test_aws(n, U1, U2, Ub, shots=shots, **kwargs)
 
 
     # elif backend == 'braket':

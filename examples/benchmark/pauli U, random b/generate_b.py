@@ -1,5 +1,9 @@
 from qiskit.circuit.random import random_circuit
-from transpiler.noisy_simulations import transpiler, get_noisy_counts
+from transpiler.transpile import transpile_circuit, get_noisy_counts
+
+
+
+
 
 
 
@@ -19,7 +23,7 @@ print("TEST Qiskit Circuit:")
 print(a)
 
 # Transpile the Qiskit circuit to use MS gates
-transpiled_qc = transpiler(a)
+transpiled_qc = transpile_circuit(a)
 # GET NOISEless probabilities
 print(get_noisy_counts(transpiled_qc, 0))
 # Print the transpiled circuit

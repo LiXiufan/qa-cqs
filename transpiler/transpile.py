@@ -5,11 +5,12 @@ from bqskit.ext import qiskit_to_bqskit
 import pennylane as qml
 from qiskit import QuantumCircuit
 
-from transpiler.bqskit_ionq_native_gates import GPIGate, GPI2Gate, PartialMSGate,ZZGate
+from transpiler.bqskit_ionq_native_gates import GPIGate, GPI2Gate, PartialMSGate, ZZGate
 from transpiler.qasm2_reader import load_qasm
 import numpy as np
 
-def transpile_circuit(qc, device=None, optimization_level=2,synthesis_epsilon=1e-4,max_synthesis_size=2):
+
+def transpile_circuit(qc, device=None, optimization_level=2, synthesis_epsilon=1e-4, max_synthesis_size=2):
     """
     Transpiles a Qiskit quantum circuit to use only MS (Mølmer–Sørensen) gates
     using BQSKit, and returns the transpiled Qiskit circuit.
@@ -45,7 +46,8 @@ def transpile_circuit(qc, device=None, optimization_level=2,synthesis_epsilon=1e
         model = MachineModel(circuit.num_qudits, gate_set=gate_set)
 
         # Compile the circuit with the given model at optimization level 2
-        compiled_circuit = compile(circuit, model, optimization_level=optimization_level,synthesis_epsilon=synthesis_epsilon,max_synthesis_size=max_synthesis_size)
+        compiled_circuit = compile(circuit, model, optimization_level=optimization_level,
+                                   synthesis_epsilon=synthesis_epsilon, max_synthesis_size=max_synthesis_size)
 
         return compiled_circuit
 
@@ -123,14 +125,10 @@ def get_noisy_counts(qc, shots=None, noise_level_two_qubit=None, noise_level_one
     noisy_result = noisy_circuit()
     return noisy_result
 
+
 if __name__ == "__main__":
-    qc=load_qasm("circuit.qasm")
+    qc = load_qasm("circuit.qasm")
     print(qc)
     qml_circuit = qml.from_qiskit(qc)
     print("Transpiled result", np.abs(qml.matrix(qml_circuit, wire_order=[0, 1])().T[0]) ** 2)  # check
     print("Noisy simulation result:", get_noisy_counts(qc, 0.00, 0.000, 0.0))
-
-
-
-
-
