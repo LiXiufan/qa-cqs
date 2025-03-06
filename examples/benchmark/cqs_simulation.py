@@ -42,7 +42,7 @@ def main_solver(instance, ansatz_tree, **kwargs):
     # Performing Hadamard test to calculate Q and r
     Q, r = calculate_Q_r(instance, ansatz_tree, **kwargs)
     # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
-    loss, alphas = solve_combination_parameters(Q, r, which_opt=None)
+    loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
     print("loss:", loss)
     print("combination parameters are:", alphas)
     return loss, alphas

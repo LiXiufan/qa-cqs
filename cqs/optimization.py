@@ -41,6 +41,8 @@ from numpy import array, ndarray
 from numpy import transpose, matmul
 from sympy import Matrix
 from typing import List, Tuple
+import torch
+import torch.optim as optim
 
 __all__ = [
     "solve_combination_parameters"
@@ -79,6 +81,36 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
         # comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-16})['x']
         comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-15})['x']
 
+
+    elif which_opt == "ADAM":
+        Q = 2*torch.Tensor(Q)
+        r = (-2) * torch.Tensor(r)
+
+        # Define the loss function L(x) = x^T Q x + r^T x
+        def loss_function(x, Q, r):
+            return torch.abs(0.5*torch.matmul(x.T, torch.matmul(Q, x)) + torch.matmul(r.T, x) + 1)
+
+        # Initialize x, Q, and r
+        dim = len(r)  # Dimension of x
+        comb_params = torch.randn(dim, requires_grad=True)  # Trainable variable
+
+        # Define optimizer
+        optimizer = optim.Adam([comb_params], lr=0.02)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1000,
+                                              gamma=0.3)  # Reduce LR by 0.3 every 1000 epochs
+        epochs=10000
+        # Training loop
+        for epoch in range(epochs):
+            optimizer.zero_grad()
+            loss = loss_function(comb_params, Q, r)  # Compute loss
+            loss.backward()  # Compute gradients
+            optimizer.step()  # Update x
+            scheduler.step()  # Adjust learning rate
+            if epoch % 1000 == 0:
+                print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}")
+        comb_params=comb_params.tolist()
+
+        # Train x
     elif which_opt == 'inv':
         Q = Matrix(Q)
         P, D = Q.diagonalize()
