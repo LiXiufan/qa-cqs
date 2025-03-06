@@ -34,7 +34,9 @@ from qiskit.circuit.random import random_circuit
 from transpiler.transpile import transpile_circuit
 from examples.benchmark.cqs_simulation import main_prober, main_solver
 
-from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
+from cqs.remote.calculation import retrieve_and_estimate_q, retrieve_and_estimate_V_dagger_V
+from cqs.remote.calculation import reshape_to_Q_r
+from cqs.optimization import solve_combination_parameters
 
 ITR = 5
 
@@ -75,7 +77,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
@@ -105,44 +107,22 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             print(Itr)
             print(LOSS)
 
+            # retrieve hardware result
+            V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
+            q_csv_filename = "q_formal.csv"
+            V_dagger_V_idxes = pd.read_csv(V_dagger_V_csv_filename).values.tolist()
+            q_idxes = pd.read_csv(q_csv_filename).values.tolist()
 
 
-
-
-
-
-            print('Ansatz tree contains:')
-            for qc in ansatz_tree:
-                print(qc)
-
-            V_dagger_V = __estimate_V_dagger_V(instance, ansatz_tree, loss_type=loss_type, **kwargs)
-            q = __estimate_q(instance, ansatz_tree, **kwargs)
-            Q, r = __reshape_to_Q_r(V_dagger_V, q)
-
-
-
-            # Performing Hadamard test to calculate Q and r
-            Q, r = calculate_Q_r(instance, ansatz_tree, **kwargs)
-            # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
+            V_dagger_V = retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes=V_dagger_V_idxes, backend='aws-ionq-aria1')
+            q = retrieve_and_estimate_q(instance, ansatz_tree, ip_idxes=V_dagger_V_idxes, backend='aws-ionq-aria1')
+            Q, r = reshape_to_Q_r(V_dagger_V, q)
             loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
             print("loss:", loss)
             print("combination parameters are:", alphas)
 
 
 
-
-
-            loss, alphas = main_solver(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2, optimization_level=2,
-                                       noise_level_two_qubit=0.01, noise_level_one_qubit=0, readout_error=0.1)
-            print(loss)
-            print(alphas)
-
-
-
-            # matrix = instance.get_matrix()
-            # print("The first example returns with a matrix:")
-            # print(matrix)
-            # print()
 
 
 

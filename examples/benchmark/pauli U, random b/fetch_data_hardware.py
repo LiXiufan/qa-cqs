@@ -31,12 +31,11 @@ from cqs.object import Instance
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
 
-from transpiler.transpile import transpile_circuit
 from examples.benchmark.cqs_simulation import main_prober, main_solver
 
 from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
 
-ITR = 5
+ITR = 1
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -78,7 +77,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
             file_noiseless = open(file_name_noiseless, "a")
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
@@ -97,29 +96,36 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # circuit depth d
             d = 3
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
-            file_noiseless.writelines(['ub is given by:', str(ub), '\n'])
+            # file_noiseless.writelines(['ub is given by:', str(ub), '\n'])
 
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
             Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
-            print(ansatz_tree[0])
+            # remove the last expanded gate
+            ansatz_tree = [ansatz_tree[i] for i in range(len(ansatz_tree) - 1)]
             file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
             file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
-            file_noiseless.writelines(['Ansatz tree is given by:', str(LOSS), '\n'])
-            for i, qc in enumerate(ansatz_tree):
-                file_noiseless.writelines(['U'+str(i+1)+":", str(qc), '\n'])
+            # file_noiseless.writelines(['Ansatz tree is given by:\n'])
+            # for i, qc in enumerate(ansatz_tree):
+            #     file_noiseless.writelines(['U'+str(i+1)+":", qc., '\n'])
             file_noiseless.close()
 
+            # Submit to hardware execution
+            V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend='aws-ionq-aria1', shots=4, optimization_level=2)
+            # Create DataFrame
+            V_dagger_V_df= pd.DataFrame(V_dagger_V_idxes)
+            # Save to CSV
+            V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
+            V_dagger_V_df.to_csv(V_dagger_V_csv_filename, index=False)
 
             # Submit to hardware execution
-            file_hardware = open(file_name_hardware, "a")
-            V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2)
-            file_hardware.writelines(["Matrix V_dagger_V indexes are:\n", V_dagger_V_idxes])
-            q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend='aws-ionq-aria1', shots=2)
-            file_hardware.writelines(["Vector q indexes are:\n", q_idxes])
-            file_hardware.close()
-
+            q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend='aws-ionq-aria1', shots=4, optimization_level=2)
+            # Create DataFrame
+            q_df= pd.DataFrame(q_idxes)
+            # Save to CSV
+            q_csv_filename = "q_formal.csv"
+            q_df.to_csv(V_dagger_V_csv_filename, index=False)
 
 
 
