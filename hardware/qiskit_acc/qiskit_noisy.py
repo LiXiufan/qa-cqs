@@ -60,7 +60,7 @@ def __build_circuit(n, U1, U2, Ub, alpha='r'):
     cir.measure(anc[0], cr[0])
     backend = AerSimulator()
     # Transpile for optimization
-    cir = transpile_qiskit(cir, backend, optimization_level=3)
+    cir = transpile_qiskit(cir, backend, optimization_level=2)
     return cir
 
 
@@ -70,7 +70,7 @@ def __run_circuit(qc, shots, **kwargs):
     noisy_kwargs = {i: kwargs[i] for i in
                     ['noise_level_two_qubit', 'noise_level_one_qubit', 'readout_error']
                     if i in kwargs.keys()}
-    print(qc)
+    # print(qc)
 
 
 

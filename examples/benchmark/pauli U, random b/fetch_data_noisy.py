@@ -68,7 +68,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b = read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
@@ -93,14 +93,14 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless',ITR=5,
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless',ITR=None,
                                     shots=0, optimization_level=2,
                                     noise_level_two_qubit=0, noise_level_one_qubit=0, readout_error=0)
             print(Itr)
             print(LOSS)
             print('ANsatz tree contains:')
-            for qc in ansatz_tree:
-                print(qc)
+            # for qc in ansatz_tree:
+            #     print(qc)
 
             loss, alphas = main_solver(instance, ansatz_tree, backend='qiskit-noisy', shots=0, optimization_level=2,
                                        noise_level_two_qubit=0, noise_level_one_qubit=0, readout_error=0)

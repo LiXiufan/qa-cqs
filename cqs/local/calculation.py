@@ -31,7 +31,7 @@ from numpy import append
 
 from numpy import real, imag
 from numpy import conj
-
+from tqdm import tqdm
 from hardware.execute import Hadamard_test
 
 
@@ -64,16 +64,24 @@ def submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
     Ub = instance.get_ub()
     tree_depth = len(ansatz_tree)
     ip_idxes = [[0 for _ in range(tree_depth)] for _ in range(tree_depth)]
-    for i in range(tree_depth):
-        for j in range(i, tree_depth):
-            element_idxes = [[0 for _ in range(num_term)] for _ in range(num_term)]
-            for k in range(num_term):
-                for l in range(num_term):
-                    U1 = unitaries[k].compose(ansatz_tree[i], qubits=unitaries[k].qubits)
-                    U2 = unitaries[l].compose(ansatz_tree[j], qubits=unitaries[l].qubits)
-                    inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
-                    element_idxes[k][l] = inner_product
-            ip_idxes[i][j] = element_idxes
+
+    # Calculate total number of iterations
+    total_iterations = sum((tree_depth - i) * (num_term ** 2) for i in range(tree_depth))
+
+    # Initialize tqdm progress bar
+    with tqdm(total=total_iterations, desc="Hadamard tests Progress") as pbar:
+        for i in range(tree_depth):
+            for j in range(i, tree_depth):
+                element_idxes = [[0 for _ in range(num_term)] for _ in range(num_term)]
+                for k in range(num_term):
+                    for l in range(num_term):
+
+                        U1 = unitaries[k].compose(ansatz_tree[i], qubits=unitaries[k].qubits)
+                        U2 = unitaries[l].compose(ansatz_tree[j], qubits=unitaries[l].qubits)
+                        inner_product = Hadamard_test(n, U1, U2, Ub, **kwargs)
+                        element_idxes[k][l] = inner_product
+                        pbar.update(1)  # Update global progress bar
+                ip_idxes[i][j] = element_idxes
     return ip_idxes
 
 
