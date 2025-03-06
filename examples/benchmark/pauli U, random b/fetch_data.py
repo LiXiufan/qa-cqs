@@ -21,9 +21,12 @@
 # !/usr/bin/env python3
 
 """
-    This file is used for benchmarking a larger number of instances.
+    This file is used for benchmarking a larger number of instances_A.
 """
 import csv
+import qiskit.qasm3 as qasm3
+import pandas as pd
+from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
@@ -64,6 +67,7 @@ def create_random_circuit_in_native_gate(n, d):
 
 
 with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+    data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
         if 3 > i > 0:
@@ -84,9 +88,9 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
 
             # circuit depth d
             d = 3
-            ub = create_random_circuit_in_native_gate(n, d)
-            print('Ub is given by:', ub)
-
+            ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
+            print('Ub is given by:', data_b.iloc[i].b)
+            print(ub)
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
