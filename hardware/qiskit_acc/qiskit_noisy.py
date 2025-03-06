@@ -100,6 +100,8 @@ def __run_circuit(qc, shots, **kwargs):
             else:
                 p0 = sum(count0) / shots
                 p1 = sum(count1) / shots
+
+
     return p0 - p1
 
 
