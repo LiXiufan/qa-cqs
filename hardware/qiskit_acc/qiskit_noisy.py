@@ -100,9 +100,9 @@ def __run_circuit(qc, shots, **kwargs):
             else:
                 p0 = sum(count0) / shots
                 p1 = sum(count1) / shots
-    # #Error mitigation
-    # p0 =(p0-noisy_kwargs["readout_error"])/(1-2*noisy_kwargs["readout_error"])
-    # p1=1-p0
+    #Error mitigation
+    p0 =(p0-noisy_kwargs["readout_error"])/(1-2*noisy_kwargs["readout_error"])
+    p1=1-p0
     return p0 - p1
 
 
