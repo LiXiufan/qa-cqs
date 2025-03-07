@@ -91,21 +91,16 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             pauli_circuits = [__num_to_pauli_circuit(l) for l in eval(row_clean[1])]
             coeffs = [float(i) for i in eval(row_clean[2])]
             print('coefficients are:', coeffs)
-            print()
 
             # circuit depth d
             d = 3
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
             print('Ub is given by:', data_b.iloc[i].b)
-            print(ub)
 
 
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
-            print(Itr)
-            print(LOSS)
 
             # retrieve hardware result
             V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
@@ -113,11 +108,20 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             V_dagger_V_idxes = pd.read_csv(V_dagger_V_csv_filename).values.tolist()
             q_idxes = pd.read_csv(q_csv_filename).values.tolist()
 
-
-            V_dagger_V = retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes=V_dagger_V_idxes, backend='aws-ionq-aria1')
-            q = retrieve_and_estimate_q(instance, ansatz_tree, ip_idxes=V_dagger_V_idxes, backend='aws-ionq-aria1')
+            V_dagger_V = retrieve_and_estimate_V_dagger_V(instance, 4, ip_idxes=V_dagger_V_idxes, backend='aws-ionq-aria1')
+            q = retrieve_and_estimate_q(instance, 4, ip_idxes=q_idxes, backend='aws-ionq-aria1')
             Q, r = reshape_to_Q_r(V_dagger_V, q)
             loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
+            # Create DataFrame
+            Q = pd.DataFrame(Q)
+            r = pd.DataFrame(r)
+            # Save to CSV
+            hardware_result_Q_csv_filename = "hardware_result_Q.csv"
+            hardware_result_r_csv_filename = "hardware_result_r.csv"
+            Q.to_csv(hardware_result_Q_csv_filename, index=False)
+            r.to_csv(hardware_result_r_csv_filename, index=False)
+            print("Q", Q)
+            print("r", r)
             print("loss:", loss)
             print("combination parameters are:", alphas)
 

@@ -55,7 +55,6 @@ def submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, **kwargs):
         In total, we are going to estimate
             total number of elements = 1/2 * (`tree_depth` + 1) * `tree_depth`
     """
-
     unitaries = instance.get_unitaries()
     n = instance.get_num_qubit()
     num_term = instance.get_num_term()
@@ -131,7 +130,7 @@ def retrieve_data(ip_id):
     return exp
 
 
-def retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='eigens'):
+def retrieve_and_estimate_V_dagger_V(instance, tree_depth, ip_idxes, backend='eigens'):
     r"""
         Estimate all independent inner products that appear in matrix `V_dagger_V`.
         Note that we only estimate all upper triangular elements and all diagonal elements.
@@ -146,11 +145,10 @@ def retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='e
     elif backend in ['aws-ionq-aria1']:
         num_term = instance.get_num_term()
         coeffs = instance.get_coeffs()
-        tree_depth = len(ansatz_tree)
         V_dagger_V = zeros((tree_depth, tree_depth), dtype='complex128')
         for i in range(tree_depth):
             for j in range(i, tree_depth):
-                element_idxes = ip_idxes[i][j]
+                element_idxes = eval(ip_idxes[i][j])
                 item = 0
                 for k in range(num_term):
                     for l in range(num_term):
@@ -167,7 +165,7 @@ def retrieve_and_estimate_V_dagger_V(instance, ansatz_tree, ip_idxes, backend='e
         return ValueError("Not supported backend.")
 
 
-def retrieve_and_estimate_q(instance, ansatz_tree, ip_idxes, backend='eigens'):
+def retrieve_and_estimate_q(instance, tree_depth, ip_idxes, backend='eigens'):
     r"""
         Retrieve the results of all submitted tasks.
     """
@@ -177,13 +175,12 @@ def retrieve_and_estimate_q(instance, ansatz_tree, ip_idxes, backend='eigens'):
     elif backend in ['aws-ionq-aria1']:   # hardware retrieval
         num_term = instance.get_num_term()
         coeffs = instance.get_coeffs()
-        tree_depth = len(ansatz_tree)
         q = zeros((tree_depth, 1), dtype='complex128')
         for i in range(tree_depth):
             element_idxes = ip_idxes[i]
             item = 0
             for k in range(num_term):
-                ip_id = element_idxes[k]
+                ip_id = eval(element_idxes[k])
                 ip_r = retrieve_data(ip_id[0])
                 ip_i = retrieve_data(ip_id[1])
                 inner_product = ip_r + 1j * ip_i
