@@ -70,11 +70,6 @@ def __run_circuit(qc, shots, **kwargs):
     noisy_kwargs = {i: kwargs[i] for i in
                     ['noise_level_two_qubit', 'noise_level_one_qubit', 'readout_error']
                     if i in kwargs.keys()}
-    # print(qc)
-
-
-
-
     cir_native = transpile_circuit(qc=qc, **transpile_kwargs)
     noisy_result = get_noisy_counts(qc=cir_native, shots=shots, **noisy_kwargs)
     p0 = 0
@@ -100,9 +95,9 @@ def __run_circuit(qc, shots, **kwargs):
             else:
                 p0 = sum(count0) / shots
                 p1 = sum(count1) / shots
-    #Error mitigation
-    p0 =(p0-noisy_kwargs["readout_error"])/(1-2*noisy_kwargs["readout_error"])
-    p1=1-p0
+    # Error mitigation
+    # p0 =(p0-noisy_kwargs["readout_error"])/(1-2*noisy_kwargs["readout_error"])
+    # p1=1-p0
     return p0 - p1
 
 

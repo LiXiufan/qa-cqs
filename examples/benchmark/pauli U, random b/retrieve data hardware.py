@@ -112,14 +112,19 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             q = retrieve_and_estimate_q(instance, 4, ip_idxes=q_idxes, backend='aws-ionq-aria1')
             Q, r = reshape_to_Q_r(V_dagger_V, q)
             loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
+
             # Create DataFrame
             Q = pd.DataFrame(Q)
             r = pd.DataFrame(r)
+            alphas = pd.DataFrame(alphas)
+
             # Save to CSV
             hardware_result_Q_csv_filename = "hardware_result_Q.csv"
             hardware_result_r_csv_filename = "hardware_result_r.csv"
+            hardware_result_alpha_csv_filename = "hardware_result_alpha.csv"
             Q.to_csv(hardware_result_Q_csv_filename, index=False)
             r.to_csv(hardware_result_r_csv_filename, index=False)
+            alphas.to_csv(hardware_result_alpha_csv_filename, index=False)
             print("Q", Q)
             print("r", r)
             print("loss:", loss)

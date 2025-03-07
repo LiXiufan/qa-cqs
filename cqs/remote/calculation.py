@@ -116,7 +116,9 @@ def __retrieve_data(task):
         p1 = 0
     else:
         p0 = sum(count0) / shots
-        p1 = sum(count1) / shots
+        # Error mitigation
+        p0 = (p0 - 0.0048) / (1 - 2 * 0.0048)
+        p1 = 1 - p0
     return p0 - p1
 
 

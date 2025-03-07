@@ -98,11 +98,11 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
                                     noise_level_two_qubit=0, noise_level_one_qubit=0, readout_error=0)
             print(Itr)
             print(LOSS)
-            print('ANsatz tree contains:')
+            # print('Ansatz tree contains:')
             # for qc in ansatz_tree:
             #     print(qc)
 
-            loss, alphas = main_solver(instance, ansatz_tree, backend='qiskit-noisy', shots=0, optimization_level=2,
+            loss, alphas = main_solver(instance, ansatz_tree, backend='qiskit-noisy', shots=0, optimization_level=4,
                                        noise_level_two_qubit=0, noise_level_one_qubit=0, readout_error=0)
             print(loss)
             print(alphas)
