@@ -77,6 +77,7 @@ def get_noisy_counts(qc, shots=None, noise_level_two_qubit=None, noise_level_one
         noise_level_two_qubit = 0
     if readout_error is None:
         readout_error = 0
+
     # Convert the Qiskit quantum circuit into a PennyLane circuit
     qml_circuit = qml.from_qiskit(qc)
 
@@ -94,21 +95,24 @@ def get_noisy_counts(qc, shots=None, noise_level_two_qubit=None, noise_level_one
 
         # Iterate through all operations in the circuit
         for op in tape.operations:
-            # Apply each gate as a unitary operation
+            gate = getattr(qml, op.name, None)  # Dynamically get the gate
 
-            if op.name == "QubitUnitary":
-                qml.QubitUnitary(op.parameters[0], wires=op.wires)
-            elif op.name == "IsingZZ":
-                qml.IsingZZ(op.parameters[0], wires=op.wires)
+            if gate:
+                try:
+                    gate(*op.parameters, wires=op.wires)  # Apply gate with parameters
+                except TypeError:
+                    raise TypeError(f"Unexpected parameters for gate {op.name}: {op.parameters}")
+            else:
+                raise ValueError(f"Unknown gate {op.name} encountered. Please check the circuit.")
 
             # Apply **1-qubit depolarizing noise** after every 1-qubit gate
             if len(op.wires) == 1:
                 qml.DepolarizingChannel(noise_level_one_qubit, wires=op.wires[0])
 
-            # Apply **2-qubit depolarizing noise** after two-qubit (MS) gates
+            # Apply **2-qubit depolarizing noise** after two-qubit gates
             if len(op.wires) == 2:
                 for qubit in op.wires:
-                    qml.DepolarizingChannel(noise_level_two_qubit_single_channel, wires=qubit)  # Adjusted probability
+                    qml.DepolarizingChannel(noise_level_two_qubit_single_channel, wires=qubit)
 
         # Apply **readout error (bit flip) before measurement**
         for qubit in range(number_of_qubits):
@@ -130,5 +134,6 @@ if __name__ == "__main__":
     qc = load_qasm("circuit.qasm")
     print(qc)
     qml_circuit = qml.from_qiskit(qc)
-    print("Transpiled result", np.abs(qml.matrix(qml_circuit, wire_order=[0, 1])().T[0]) ** 2)  # check
+    print("Transpiled result", np.abs(qml.matrix(qml_circuit, wire_order=[0, 1,2,3])().T[0]) ** 2)  # check
+
     print("Noisy simulation result:", get_noisy_counts(qc, 0.00, 0.000, 0.0))

@@ -2,11 +2,6 @@ from qiskit.circuit.random import random_circuit
 from transpiler.transpile import transpile_circuit, get_noisy_counts
 
 
-
-
-
-
-
 # ===========================
 # TEST: Transpile a Qiskit circuit
 # ===========================
