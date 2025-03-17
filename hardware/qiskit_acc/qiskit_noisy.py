@@ -60,9 +60,7 @@ def __build_circuit(n, U1, U2, Ub, alpha='r'):
     # cir.measure(anc[0], cr[0])
     backend = AerSimulator()
     # Transpile for optimization
-    cir = transpile_qiskit(cir, backend, optimization_level=2,basis_gates = ["rzz", "u"]
-)
-    cir = transpile_qiskit(cir, backend, optimization_level=3,basis_gates = ["rzz", "u"]
+    cir = transpile_qiskit(cir, backend, optimization_level=2,basis_gates = ["rx", "ry","cx"]
 )
     return cir
 
@@ -75,6 +73,10 @@ def __run_circuit(qc, shots, **kwargs):
                     if i in kwargs.keys()}
     if 'device' in transpile_kwargs and transpile_kwargs['device'] == "qiskit_native":
         cir_native = qc  # Use the original circuit if 'device' is missing or 'qiskit_native'
+    elif 'device' in transpile_kwargs and transpile_kwargs['device'] == "IQM":
+        backend = AerSimulator()
+        cir_native=transpile_qiskit(qc, backend, optimization_level=3, basis_gates=["rx", "ry", "cx"]
+                         )
     else:
         cir_native = transpile_circuit(qc=qc, **transpile_kwargs)
     noisy_result = get_noisy_counts(qc=cir_native, shots=shots, **noisy_kwargs)
