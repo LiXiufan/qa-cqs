@@ -73,7 +73,7 @@ def create_random_circuit_in_native_gate(n, d):
 
 
 
-with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+with open('../../../../../../examples/benchmark/pauli u, random b/3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
@@ -103,8 +103,8 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
 
             # retrieve hardware result
-            V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
-            q_csv_filename = "q_formal.csv"
+            V_dagger_V_csv_filename = "../V_dagger_V_formal.csv"
+            q_csv_filename = "../q_formal.csv"
             V_dagger_V_idxes = pd.read_csv(V_dagger_V_csv_filename).values.tolist()
             q_idxes = pd.read_csv(q_csv_filename).values.tolist()
 
@@ -119,9 +119,9 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             alphas = pd.DataFrame(alphas)
 
             # Save to CSV
-            hardware_result_Q_csv_filename = "hardware_result_Q.csv"
-            hardware_result_r_csv_filename = "hardware_result_r.csv"
-            hardware_result_alpha_csv_filename = "hardware_result_alpha.csv"
+            hardware_result_Q_csv_filename = "../hardware_result_Q.csv"
+            hardware_result_r_csv_filename = "../hardware_result_r.csv"
+            hardware_result_alpha_csv_filename = "../hardware_result_alpha.csv"
             Q.to_csv(hardware_result_Q_csv_filename, index=False)
             r.to_csv(hardware_result_r_csv_filename, index=False)
             alphas.to_csv(hardware_result_alpha_csv_filename, index=False)
