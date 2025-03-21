@@ -23,5 +23,5 @@ for i in range(tree_depth):
 # Create DataFrame
 V_dagger_V_df = pd.DataFrame(ip_idxes)
 # Save to CSV
-V_dagger_V_csv_filename = "../V_dagger_V_formal.csv"
+V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
 V_dagger_V_df.to_csv(V_dagger_V_csv_filename, index=False)

@@ -27,7 +27,7 @@
 
     Assume: all betas are in [-1, 1]
 """
-from estimate import main
+from examples.frugal.estimate import main
 
 NRANGE = list(range(5, 11))
 SHOTS = 10200
