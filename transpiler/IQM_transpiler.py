@@ -159,21 +159,21 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
 
     # Mapping of Qiskit gates to IQM's native Braket gates
     gate_map = {
-        "h": lambda q, p: braket_circuit.h(q[0]),  # Hadamard gate
-        "x": lambda q, p: braket_circuit.x(q[0]),  # Pauli-X gate
-        "y": lambda q, p: braket_circuit.y(q[0]),  # Pauli-Y gate
-        "z": lambda q, p: braket_circuit.z(q[0]),  # Pauli-Z gate
+        "h": lambda q, p: braket_circuit.h(q[0] + 1),  # Hadamard gate
+        "x": lambda q, p: braket_circuit.x(q[0] + 1),  # Pauli-X gate
+        "y": lambda q, p: braket_circuit.y(q[0] + 1),  # Pauli-Y gate
+        "z": lambda q, p: braket_circuit.z(q[0] + 1),  # Pauli-Z gate
 
         # IQM-native RX (PRX) gate: prx(theta, alpha) with axis shift α
-        "rx": lambda q, p: braket_circuit.prx(q[0], p[0], 0),  # RX(θ) with α=0
-        "ry": lambda q, p: braket_circuit.prx(q[0], p[0], np.pi / 2),  # RY(θ) as RX(θ, π/2)
-        "rz": lambda q, p: braket_circuit.rz(q[0], p[0]),  # RZ(θ) (directly supported)
+        "rx": lambda q, p: braket_circuit.prx(q[0] + 1, p[0], 0),  # RX(θ) with α=0
+        "ry": lambda q, p: braket_circuit.prx(q[0] + 1, p[0], np.pi / 2),  # RY(θ) as RX(θ, π/2)
+        "rz": lambda q, p: braket_circuit.rz(q[0] + 1, p[0]),  # RZ(θ) (directly supported)
 
         # Multi-qubit gates
-        "cx": lambda q, p: braket_circuit.cnot(q[0], q[1]),  # CNOT (CX) gate
-        "cz": lambda q, p: braket_circuit.cz(q[0], q[1]),  # **IQM-native CZ gate**
-        "swap": lambda q, p: braket_circuit.swap(q[0], q[1]),  # SWAP gate
-        "ccx": lambda q, p: braket_circuit.ccnot(q[0], q[1], q[2]),  # Toffoli (CCX) gate
+        "cx": lambda q, p: braket_circuit.cnot(q[0] + 1, q[1] + 1),  # CNOT (CX) gate
+        "cz": lambda q, p: braket_circuit.cz(q[0] + 1, q[1] + 1),  # **IQM-native CZ gate**
+        "swap": lambda q, p: braket_circuit.swap(q[0] + 1, q[1] + 1),  # SWAP gate
+        "ccx": lambda q, p: braket_circuit.ccnot(q[0] + 1, q[1] + 1, q[2] + 1),  # Toffoli (CCX) gate
     }
 
     # Iterate over Qiskit's circuit operations and convert them
@@ -189,7 +189,7 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
             raise ValueError(f"Unsupported gate: {instr.name}")  # Handle unsupported gates
 
     # Wrap the Braket circuit in a verbatim box and add measurement
-    return Circuit().add_verbatim_box(braket_circuit).measure(range(num_qubits))
+    return Circuit().add_verbatim_box(braket_circuit).measure(range(1, num_qubits + 1))
 
 
 # ---------------------------------------------------------------------------
