@@ -34,6 +34,7 @@ from qiskit.circuit.random import random_circuit
 from transpiler.transpile import transpile_circuit
 from examples.benchmark.cqs_main import main_prober
 
+
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
     pauli_list = [paulis[int(i)] for i in num_list]
@@ -65,25 +66,34 @@ def create_random_circuit_in_native_gate(n, d):
     # ub = transpile_circuit(ub, device='Aria', optimization_level=2)
     return ub
 
+ITR = 3
+data_file_name = '3_qubit_data_generation_matrix_A.csv'
 
-with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+with open(data_file_name, 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
+            file_name_noiseless = data_file_name + '_instance_' + str(i) + '_result_noiseless.txt'
+            file_noiseless = open(file_name_noiseless, "a")
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
             print("qubit number is:", n)
+            file_noiseless.writelines(['qubit number is:', str(n), '\n'])
             L = int(nLc[1])
             print("term number is:", L)
+            file_noiseless.writelines(['term number is:', str(L), '\n'])
             kappa = float(nLc[2])
             print('condition number is', kappa)
+            file_noiseless.writelines(['condition number is:', str(kappa), '\n'])
             pauli_strings = [__num_to_pauli_list(l) for l in eval(row_clean[1])]
             print('Pauli strings are:', pauli_strings)
+            file_noiseless.writelines(['Pauli strings are:', str(pauli_strings), '\n'])
             pauli_circuits = [__num_to_pauli_circuit(l) for l in eval(row_clean[1])]
             coeffs = [float(i) for i in eval(row_clean[2])]
             print('coefficients are:', coeffs)
+            file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
             print()
 
             # circuit depth d
@@ -94,9 +104,12 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=None, shots=0, optimization_level=2)
-            print(Itr)
-            print(LOSS)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', file=file_noiseless, ITR=ITR, shots=0, optimization_level=2)
+            print('Iterations are:', Itr)
+            file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
+            print('Losses are:', LOSS)
+            file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
+            file_noiseless.close()
             # matrix = instance.get_matrix()
             # print("The first example returns with a matrix:")
             # print(matrix)
