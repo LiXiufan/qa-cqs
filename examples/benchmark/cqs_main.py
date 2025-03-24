@@ -30,12 +30,14 @@ from cqs.expansion import expand_ansatz_tree
 from qiskit import QuantumCircuit, QuantumRegister
 
 
-def main_solver(instance, ansatz_tree, **kwargs):
+def main_solver(instance, ansatz_tree, file, **kwargs):
     r"""
         This function solves Ax=b when Ansatz tree is known to us.
     """
     # Performing Hadamard test to calculate Q and r
     Q, r = calculate_Q_r(instance, ansatz_tree, **kwargs)
+    file.writelines(['Q:', str(Q), '\n'])
+    file.writelines(['r:', str(r), '\n'])
     # Solve the optimization of combination parameters: x* = \sum (alpha * ansatz_state)
     loss, alphas = solve_combination_parameters(Q, r, which_opt='ADAM')
     print("loss:", loss)
@@ -49,7 +51,7 @@ def __solve_and_expand(instance, ansatz_tree, **kwargs):
     return loss, alphas, new_ansatz_tree
 
 
-def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
+def main_prober(instance, backend=None, file=None, ITR=None, eps=None, **kwargs):
     r"""
         This function solves Ax=b when Ansatz tree is not known to us.
         Thus we use expansion algorithms to probe the solution space,
@@ -84,13 +86,18 @@ def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
         while loss > eps:
             itr_count += 1
             Itr.append(itr_count)
-            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
+            file.writelines(['Itr:', str(itr_count), '\n'])
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, file=file, backend=backend, **kwargs)
             # print("loss:", loss)
             LOSS.append(loss)
     else:
-        for itr in range(1, ITR + 1):
-            Itr.append(itr)
-            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
+        while loss > eps:
+            itr_count += 1
+            if itr_count > ITR:
+                break
+            Itr.append(itr_count)
+            file.writelines(['Itr:', str(itr_count), '\n'])
+            loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, file=file, backend=backend, **kwargs)
             # print("loss:", loss)
             LOSS.append(loss)
     # print("combination parameters are:", alphas)
