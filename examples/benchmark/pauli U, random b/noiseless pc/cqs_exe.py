@@ -30,9 +30,11 @@ from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.random import random_circuit
-
+from tqdm import tqdm
 from transpiler.transpile import transpile_circuit
 from examples.benchmark.cqs_main import main_prober
+import numpy as np
+
 
 
 def __num_to_pauli_list(num_list):
@@ -66,41 +68,39 @@ def create_random_circuit_in_native_gate(n, d):
     # ub = transpile_circuit(ub, device='Aria', optimization_level=2)
     return ub
 
-ITR = 3
-data_file_name = '3_qubit_data_generation_matrix_A.csv'
 
-with open(data_file_name, 'r', newline='') as csvfile:
-    data_b=read_csv_b(3)
-    reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-    for i, row in enumerate(reader):
-        if 2 > i > 0:
+ITR =15
+kappa_target=3
+L_target=5
+current=0
+data_file_name='6_qubit_data_generation_matrix_A.csv'
+data_A=pd.read_csv('6_qubit_data_generation_matrix_A.csv')
+data_b = read_csv_b(6)
+
+
+
+for iter in range(10):
+    for i in range(current,len(data_A)):
+        current=i+1
+        n = data_A.iloc[i].n
+        L = data_A.iloc[i].N
+        kappa=data_A.iloc[i].cond_number
+        pauli_strings_numbers=np.array(eval(data_A.iloc[i].pauli_strings))
+        coeffs=np.array(eval(data_A.iloc[i].coefficients))
+        pauli_circuits = [__num_to_pauli_circuit(l) for l in pauli_strings_numbers]
+        pauli_strings = [__num_to_pauli_list(l) for l in pauli_strings_numbers]
+
+        if kappa_target<kappa<kappa_target+1 and L==L_target:
             file_name_noiseless = data_file_name + '_instance_' + str(i) + '_result_noiseless.txt'
             file_noiseless = open(file_name_noiseless, "a")
-            row_clean = [j for j in ''.join(row).split('"') if j != ',']
-            nLc = row_clean[0].split(',')
-            n = int(nLc[0])
-            print("qubit number is:", n)
             file_noiseless.writelines(['qubit number is:', str(n), '\n'])
-            L = int(nLc[1])
-            print("term number is:", L)
             file_noiseless.writelines(['term number is:', str(L), '\n'])
-            kappa = float(nLc[2])
-            print('condition number is', kappa)
             file_noiseless.writelines(['condition number is:', str(kappa), '\n'])
-            pauli_strings = [__num_to_pauli_list(l) for l in eval(row_clean[1])]
-            print('Pauli strings are:', pauli_strings)
             file_noiseless.writelines(['Pauli strings are:', str(pauli_strings), '\n'])
-            pauli_circuits = [__num_to_pauli_circuit(l) for l in eval(row_clean[1])]
-            coeffs = [float(i) for i in eval(row_clean[2])]
-            print('coefficients are:', coeffs)
             file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
-            print()
 
-            # circuit depth d
-            d = 3
+
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
-            print('Ub is given by:', data_b.iloc[i].b)
-            print(ub)
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
@@ -110,11 +110,13 @@ with open(data_file_name, 'r', newline='') as csvfile:
             print('Losses are:', LOSS)
             file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
             file_noiseless.close()
-            # matrix = instance.get_matrix()
-            # print("The first example returns with a matrix:")
-            # print(matrix)
-            # print()
 
+
+            if LOSS[-1]<0.01:
+                print("\nSUCCESS"+str(i)+"\nSUCCESS"+str(i)+"\nSUCCESS"+str(i)+"\nSUCCESS"+str(i)+"\nSUCCESS"+str(i)+"\nSUCCESS"+str(i))
+            else:
+                print("FAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\n")
+            break
 
 
 
