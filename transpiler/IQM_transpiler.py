@@ -1,5 +1,6 @@
 from __future__ import annotations  # Enables forward declarations (useful for type hints)
 
+import qiskit
 # Import required quantum computing libraries
 from qiskit_aer import AerSimulator  # Qiskit's AerSimulator for running quantum circuits
 from qiskit import transpile  # Used to optimize and compile circuits
@@ -8,6 +9,7 @@ from qiskit.transpiler import CouplingMap  # Defines the connectivity of a quant
 from qiskit.converters import circuit_to_dag, dag_to_circuit  # Convert between circuit and DAG representations
 from collections import OrderedDict  # Used for ordered storage of quantum registers
 from qiskit import QuantumCircuit
+from braket.devices import LocalSimulator
 from braket.circuits import Circuit
 import numpy as np
 # ---------------------------------------------------------------------------
@@ -197,18 +199,35 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    n = 5
     # Generate a random 5-qubit quantum circuit with a depth of 10
-    qc = random_circuit(6, max_operands=2, depth=10, measure=False)
-    print('cz number before: ',qc.num_nonlocal_gates())
-    # Print the original circuit
-    print("Original Quantum Circuit:")
-    print(qc)
+    qc = random_circuit(n, max_operands=2, depth=10, measure=False)
 
-    transpiled_qc = transpile_simulation(qc)
-    print('cz number after: ', transpiled_qc.num_nonlocal_gates())
+    transpiled_qc_sim = transpile_simulation(qc)
 
-    # Print the transpiled circuit after simulation optimization
-    print("\nTranspiled Quantum Circuit for Simulation:")
-    print(transpiled_qc)
+    transpiled_qc = transpile_to_IQM_braket(qc)
 
-    print(transpile_to_IQM_braket(qc))
+    simulator = AerSimulator()
+    qc2 = QuantumCircuit(n)
+    qc2.append(qc.to_gate(), range(n))
+    qc2.measure_all()
+    qc2 = qiskit.transpile(qc2, simulator)
+    result1 = simulator.run(qc2, shots=1024).result()
+    print(result1.get_counts())
+
+    qc3 = QuantumCircuit(transpiled_qc_sim.qubits)
+    qc3.append(transpiled_qc_sim.to_gate(), transpiled_qc_sim.qubits)
+    qc3.measure_all()
+    qc3 = qiskit.transpile(qc3, simulator)
+    result2 = simulator.run(qc3, shots=1024).result()
+    print(result2.get_counts())
+
+    device = LocalSimulator()
+    result3 = device.run(transpiled_qc, shots=1024).result()
+    print(result3.measurement_counts)
+
+
+
+
+
+
