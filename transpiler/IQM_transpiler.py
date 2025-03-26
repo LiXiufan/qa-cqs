@@ -1,5 +1,5 @@
 from __future__ import annotations  # Enables forward declarations (useful for type hints)
-
+import re
 # Import required quantum computing libraries
 from qiskit_aer import AerSimulator  # Qiskit's AerSimulator for running quantum circuits
 from qiskit import transpile  # Used to optimize and compile circuits
@@ -9,6 +9,7 @@ from qiskit.converters import circuit_to_dag, dag_to_circuit  # Convert between 
 from collections import OrderedDict  # Used for ordered storage of quantum registers
 from qiskit import QuantumCircuit
 from braket.circuits import Circuit
+import qiskit
 import numpy as np
 # ---------------------------------------------------------------------------
 # **Quantum Hardware Mapping: Logical-to-Physical Qubit Layout**
@@ -39,19 +40,33 @@ IQM_coupling_map = CouplingMap([
 # **Utility Functions**
 # ---------------------------------------------------------------------------
 
-def inverse_permutation(permutation):
+def build_permutation_IQM(n, indices):
     """
-    Compute the inverse of a given permutation.
+    Builds a permutation π ∈ S_n such that elements at the given `indices`
+    will be moved to positions 0, 1, 2, ..., respectively.
 
     Parameters:
-        permutation (list): A list representing a permutation.
+        n (int): size of the permutation
+        indices (list of int): list of original indices to be mapped to [0, 1, 2, ...]
 
     Returns:
-        list: The inverse permutation.
+        list: the resulting permutation of length n
     """
-    inverse = np.empty_like(permutation)
-    inverse[permutation] = np.arange(len(permutation))
-    return list(inverse)
+    permutation = [None] * n
+    used_values = set()
+
+    # Step 1: Assign specified positions
+    for target_pos, original_index in enumerate(indices):
+        permutation[original_index] = target_pos
+        used_values.add(target_pos)
+
+    # Step 2: Fill in remaining values without repetition
+    free_values = iter([x for x in range(n) if x not in used_values])
+    for i in range(n):
+        if permutation[i] is None:
+            permutation[i] = next(free_values)
+
+    return permutation
 
 def remove_idle_qwires(circ):
     """
@@ -107,18 +122,27 @@ def transpile_simulation(qiskit_qc):
     )
 
     # Compute inverse layout for reversing logical-physical mapping
-    inverse_layout = inverse_permutation(
-        initial_layout + [i for i in range(20) if i not in initial_layout]
-    )
+    inverse_layout = build_permutation_IQM(20,initial_layout)
+
 
     # Perform final transpilation with inverse layout and remove idle qubits
     qc_qiskit = transpile(qc, optimization_level=0, initial_layout=inverse_layout)
+
     qc_qiskit = remove_idle_qwires(qc_qiskit)
 
     return qc_qiskit  # Return optimized and cleaned-up circuit
 
+def extract_indices(instruction_str):
+    # Pattern to match the qubit index and clbit index
+    pattern = r'Qubit\(.*?, (\d+)\).*?Clbit\(.*?, (\d+)\)'
+    matches = re.search(pattern, instruction_str)
+    if matches:
+        return [int(matches.group(1)), int(matches.group(2))]
+    return None
 
 def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
+
+    qiskit_qc.measure_all()
 
     # Retrieve initial layout based on number of qubits
     initial_layout = IQM_initial_layout[str(qiskit_qc.num_qubits)]
@@ -135,6 +159,9 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
         coupling_map=IQM_coupling_map,
         initial_layout=initial_layout
     )
+
+    measurement_correspondence=[extract_indices(str([qc.data[i]])) for i in range(len(qc.data)-qiskit_qc.num_qubits,len(qc.data),1)]
+    qc.remove_final_measurements()
     """
     Convert a Qiskit QuantumCircuit to an Amazon Braket Circuit.
 
@@ -189,7 +216,7 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
             raise ValueError(f"Unsupported gate: {instr.name}")  # Handle unsupported gates
 
     # Wrap the Braket circuit in a verbatim box and add measurement
-    return Circuit().add_verbatim_box(braket_circuit).measure(range(1, num_qubits + 1))
+    return measurement_correspondence,Circuit().add_verbatim_box(braket_circuit).measure(range(1, num_qubits + 1))
 
 
 # ---------------------------------------------------------------------------
@@ -197,18 +224,49 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+
+    def print_sorted_binary_dict(data):
+        """
+        Prints dictionary entries in two columns:
+        - Left: sorted by binary keys (ascending order)
+        - Right: sorted by values (descending order)
+        """
+        sorted_by_key = sorted(data.items(), key=lambda item: int(item[0], 2))
+        sorted_by_value = sorted(data.items(), key=lambda item: item[1], reverse=True)
+
+        key_width = max(len(key) for key in data)
+
+        print(f"{'By Key':<{key_width+8}}{'':4}{'By Value'}")
+        print("-" * (key_width + 8) + "    " + "-" * (key_width + 8))
+
+        for left, right in zip(sorted_by_key, sorted_by_value):
+            l_key, l_val = left
+            r_key, r_val = right
+            print(f"{l_key}: {l_val:<5}    {r_key}: {r_val}")
+
+
+
+
+    n = 6
     # Generate a random 5-qubit quantum circuit with a depth of 10
-    qc = random_circuit(6, max_operands=2, depth=10, measure=False)
-    print('cz number before: ',qc.num_nonlocal_gates())
-    # Print the original circuit
-    print("Original Quantum Circuit:")
-    print(qc)
+    qc = random_circuit(n, max_operands=2, depth=10, measure=False)
+    # qc=QuantumCircuit(5)
+    # qc.rx(1,0)
+    # qc.measure_all()
 
-    transpiled_qc = transpile_simulation(qc)
-    print('cz number after: ', transpiled_qc.num_nonlocal_gates())
+    measurement_correspondence,IQM_braket_circuit = transpile_to_IQM_braket(qc)
+    print(measurement_correspondence)
+    # # transpile_to_IQM_braket(qc)
+    #
+    #
+    # simulator = AerSimulator()
+    # qc2=qc.copy()
+    # qc2=transpile(qc2, simulator)
+    # result1 = simulator.run(qc2, shots=10000).result()
+    # print_sorted_binary_dict(result1.get_counts())
+    #
+    # print()
+    # result2 = simulator.run(transpiled_qc_sim, shots=10000).result()
+    # print_sorted_binary_dict(result2.get_counts())
 
-    # Print the transpiled circuit after simulation optimization
-    print("\nTranspiled Quantum Circuit for Simulation:")
-    print(transpiled_qc)
 
-    print(transpile_to_IQM_braket(qc))
