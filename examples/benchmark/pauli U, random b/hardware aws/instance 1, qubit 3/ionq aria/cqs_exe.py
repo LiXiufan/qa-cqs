@@ -101,7 +101,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', file=file_noiseless, ITR=ITR, shots=0, optimization_level=2)
             # remove the last expanded gate
             ansatz_tree = [ansatz_tree[i] for i in range(len(ansatz_tree) - 1)]
             file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
