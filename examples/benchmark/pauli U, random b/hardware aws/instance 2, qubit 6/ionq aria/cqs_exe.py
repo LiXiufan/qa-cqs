@@ -35,8 +35,6 @@ from examples.benchmark.cqs_main import main_prober
 
 from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
 
-ITR = 4
-
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
     pauli_list = [paulis[int(i)] for i in num_list]
@@ -70,14 +68,14 @@ def create_random_circuit_in_native_gate(n, d):
 
 HARDWARE = 'aws-ionq-aria1'
 
-with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
-    file_name_noiseless = 'instance_1_result_noiseless.txt'
-    file_name_hardware = 'instance_1_result_hardware.txt'
+with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+    file_name_noiseless = 'instance_2995_result_noiseless.txt'
+    file_name_hardware = 'instance_2995_result_hardware.txt'
 
-    data_b=read_csv_b(3)
+    data_b=read_csv_b(6)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 2 > i > 0:
+        if i == 2995:
             file_noiseless = open(file_name_noiseless, "a")
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
@@ -94,14 +92,13 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
 
             # circuit depth d
-            d = 3
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
             # file_noiseless.writelines(['ub is given by:', str(ub), '\n'])
 
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=ITR, shots=0, optimization_level=2)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', file=file_noiseless, ITR=None, shots=0, optimization_level=2)
             # remove the last expanded gate
             ansatz_tree = [ansatz_tree[i] for i in range(len(ansatz_tree) - 1)]
             file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
