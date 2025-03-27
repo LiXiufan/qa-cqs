@@ -69,8 +69,8 @@ def create_random_circuit_in_native_gate(n, d):
 HARDWARE = 'aws-iqm-garnet'
 
 with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
-    file_name_noiseless = 'instance_2_result_noiseless.txt'
-    file_name_hardware = 'instance_2_result_hardware.txt'
+    file_name_noiseless = 'instance_2995_result_noiseless.txt'
+    file_name_hardware = 'instance_2995_result_hardware.txt'
 
     data_b=read_csv_b(6)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
