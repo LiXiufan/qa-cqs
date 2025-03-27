@@ -73,9 +73,9 @@ ITR =15
 kappa_target=3
 L_target=5
 current=0
-data_file_name='6_qubit_data_generation_matrix_A.csv'
-data_A=pd.read_csv('6_qubit_data_generation_matrix_A.csv')
-data_b = read_csv_b(6)
+data_file_name='9_qubit_data_generation_matrix_A.csv'
+data_A=pd.read_csv('9_qubit_data_generation_matrix_A.csv')
+data_b = read_csv_b(9)
 
 
 
