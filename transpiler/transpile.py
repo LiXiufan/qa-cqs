@@ -1,6 +1,7 @@
 from bqskit import Circuit, compile
 from bqskit.compiler.machine import MachineModel
 from bqskit.ext import qiskit_to_bqskit
+import re
 
 import pennylane as qml
 from qiskit import QuantumCircuit
@@ -29,7 +30,10 @@ IQM_initial_layout = {
     '4': [9, 8, 14, 13],
     '5': [9, 8, 10, 14, 4],
     '6': [9, 8, 10, 14, 4, 13],
-    '7': [9, 8, 10, 14, 4, 13, 15]
+    '7': [9, 8, 10, 14, 4, 13, 15],
+    '8': [9, 8, 10, 14, 4, 13, 15, 5],
+    '9': [9, 8, 10, 14, 4, 13, 15, 5, 3],
+    '10': [9, 8, 10, 14, 4, 13, 15, 5, 3, 11]
 }
 
 # **Quantum Coupling Map for IQM Device**
@@ -180,8 +184,18 @@ def __transpile_circuit_to_iqm_sim(qc: QuantumCircuit, optimization_level=3):
 
     return qc_qiskit  # Return optimized and cleaned-up circuit
 
+def extract_indices(instruction_str):
+    # Pattern to match the qubit index and clbit index
+    pattern = r'Qubit\(.*?, (\d+)\).*?Clbit\(.*?, (\d+)\)'
+    matches = re.search(pattern, instruction_str)
+    if matches:
+        return [int(matches.group(1)), int(matches.group(2))]
+    return None
 
 def __transpile_circuit_to_iqm(qc: QuantumCircuit, optimization_level=3) -> Circuit:
+
+    qc.measure_all()
+
     # Retrieve initial layout based on number of qubits
     initial_layout = IQM_initial_layout[str(qc.num_qubits)]
 
@@ -197,6 +211,9 @@ def __transpile_circuit_to_iqm(qc: QuantumCircuit, optimization_level=3) -> Circ
         coupling_map=IQM_coupling_map,
         initial_layout=initial_layout
     )
+
+    measurement_correspondence=[extract_indices(str([qc.data[i]])) for i in range(len(qc.data)-qc.num_qubits,len(qc.data),1)]
+    qc.remove_final_measurements()
     """
     Convert a Qiskit QuantumCircuit to an Amazon Braket Circuit.
 
@@ -251,7 +268,7 @@ def __transpile_circuit_to_iqm(qc: QuantumCircuit, optimization_level=3) -> Circ
             raise ValueError(f"Unsupported gate: {instr.name}")  # Handle unsupported gates
 
     # Wrap the Braket circuit in a verbatim box and add measurement
-    return Circuit().add_verbatim_box(braket_circuit).measure(range(1, num_qubits + 1))
+    return measurement_correspondence, Circuit().add_verbatim_box(braket_circuit).measure(range(1, num_qubits + 1))
 
 
 def transpile_circuit(qc, provider=None, device=None, optimization_level=2, synthesis_epsilon=1e-4,
@@ -275,14 +292,17 @@ def transpile_circuit(qc, provider=None, device=None, optimization_level=2, synt
                                                     optimization_level=optimization_level,
                                                     synthesis_epsilon=synthesis_epsilon,
                                                     max_synthesis_size=max_synthesis_size)
+        return qc_transpiled
+
     elif provider == 'iqm-sim':
         qc_transpiled = __transpile_circuit_to_iqm_sim(qc, optimization_level)
+        return qc_transpiled
 
     elif provider == 'iqm':
-        qc_transpiled = __transpile_circuit_to_iqm(qc, optimization_level)
+        measurement_correspondence, qc_transpiled = __transpile_circuit_to_iqm(qc, optimization_level)
+        return measurement_correspondence, qc_transpiled
     else:
         raise ValueError("Please provide a valid provider name: 'ionq' or 'iqm'.")
-    return qc_transpiled
 
 
 def get_noisy_counts(qc, shots=None, noise_level_two_qubit=None, noise_level_one_qubit=None, readout_error=None):

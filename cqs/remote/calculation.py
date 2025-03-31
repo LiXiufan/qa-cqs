@@ -114,6 +114,7 @@ def __retrieve_data(task):
 
 def retrieve_data(ip_id):
     task = AwsQuantumTask(arn=ip_id)
+    # TODO: save task result locally.
     status = task.state()
     if status != 'COMPLETED':
         return ValueError("I am sorry, your current task is in the status of", status)
@@ -181,7 +182,6 @@ def retrieve_and_estimate_q(instance, tree_depth, ip_idxes, backend='eigens'):
         return q
     else:
         return ValueError("Not supported backend.")
-
 
 
 def reshape_to_Q_r(matrix, vector):

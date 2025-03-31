@@ -71,19 +71,19 @@ def __run_circuit(qc, shots, **kwargs):
     transpile_kwargs = {i: kwargs[i] for i in ['device', 'optimization_level'] if i in kwargs.keys()}
 
     # Transpile for iqm native circuits
-    qc_transpiled = transpile_circuit(qc=qc, provider='iqm', **transpile_kwargs)
+    measurement_correspondence, qc_transpiled = transpile_circuit(qc=qc, provider='iqm', **transpile_kwargs)
     device = AwsDevice("arn:aws:braket:eu-north-1::device/qpu/iqm/Garnet")
     task = device.run(qc_transpiled, shots=shots, disable_qubit_rewiring=True)
-    return task.id
+    return measurement_correspondence, task.id
 
 
 def Hadamard_test(n, U1, U2, Ub, shots, **kwargs):
     # build circuit
     cir_r = __build_circuit(n, U1, U2, Ub, alpha='r')
-    cir_r_id = __run_circuit(cir_r, shots=int(shots / 2), **kwargs)
+    cir_r_meas, cir_r_id = __run_circuit(cir_r, shots=int(shots / 2), **kwargs)
     cir_i = __build_circuit(n, U1, U2, Ub, alpha='i')
-    cir_i_id = __run_circuit(cir_i, shots=int(shots / 2), **kwargs)
-    cir_hadamard_test_id = (cir_r_id, cir_i_id)
+    cir_i_meas, cir_i_id = __run_circuit(cir_i, shots=int(shots / 2), **kwargs)
+    cir_hadamard_test_id = ((cir_r_id, cir_i_id), (cir_r_meas, cir_i_meas))
     return cir_hadamard_test_id
 
 
