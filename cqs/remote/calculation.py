@@ -114,7 +114,6 @@ def __retrieve_data(task):
 
 def retrieve_data(ip_id):
     task = AwsQuantumTask(arn=ip_id)
-    # TODO: save task result locally.
     status = task.state()
     if status != 'COMPLETED':
         return ValueError("I am sorry, your current task is in the status of", status)

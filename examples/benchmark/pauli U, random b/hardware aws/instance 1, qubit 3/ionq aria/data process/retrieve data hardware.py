@@ -28,11 +28,9 @@ import qiskit.qasm3 as qasm3
 import pandas as pd
 from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit.random import random_circuit
 
-from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_main import main_prober, main_solver
 
 from cqs.remote.calculation import retrieve_and_estimate_q, retrieve_and_estimate_V_dagger_V
 from cqs.remote.calculation import reshape_to_Q_r

@@ -106,7 +106,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
             file_noiseless.close()
 
-            # Submit to hardware execution
+            # Submit to ionq aria
             V_dagger_V_idxes = submit_all_inner_products_in_V_dagger_V(instance, ansatz_tree, backend=HARDWARE, shots=1024, optimization_level=2)
             # Create DataFrame
             V_dagger_V_df= pd.DataFrame(V_dagger_V_idxes)
@@ -114,7 +114,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
             V_dagger_V_df.to_csv(V_dagger_V_csv_filename, index=False)
 
-            # Submit to hardware execution
+            # Submit to ionq aria
             q_idxes = submit_all_inner_products_in_q(instance, ansatz_tree, backend=HARDWARE, shots=1024, optimization_level=2)
             # Create DataFrame
             q_df= pd.DataFrame(q_idxes)

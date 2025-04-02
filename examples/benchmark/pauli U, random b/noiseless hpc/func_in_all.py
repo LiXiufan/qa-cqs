@@ -740,7 +740,7 @@ def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
     # For eigens simulator, each unitary gate is a list of Pauli strings.
     # For qiskit simulator, each unitary gate is a quantum circuit object in qiskit.
     if backend not in ['eigens', 'qiskit-noiseless', 'qiskit-noisy']:
-        return ValueError("We do not allow the calls of this function in real hardware execution, since the "
+        return ValueError("We do not allow the calls of this function in real ionq aria, since the "
                           "connection and execution takes time. Instead, we encourage the user to separate `submit`"
                           "process and `retrieve` process. Please try to build it using `main-solver`.")
     if eps is None:

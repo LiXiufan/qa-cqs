@@ -23,22 +23,19 @@
 """
     This file is used for benchmarking a larger number of instances_A.
 """
+
 import csv
 import qiskit.qasm3 as qasm3
 import pandas as pd
 from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit.random import random_circuit
 
-from transpiler.transpile import transpile_circuit
-from examples.benchmark.cqs_main import main_prober, main_solver
+from examples.benchmark.cqs_main import main_prober
 
-from cqs.remote.calculation import retrieve_and_estimate_q, retrieve_and_estimate_V_dagger_V
-from cqs.remote.calculation import reshape_to_Q_r
+from cqs.remote.calculation import retrieve_and_estimate_V_dagger_V, retrieve_and_estimate_q, reshape_to_Q_r
 from cqs.optimization import solve_combination_parameters
-
-ITR = 5
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -71,36 +68,47 @@ def create_random_circuit_in_native_gate(n, d):
     # ub = transpile_circuit(ub, device='Aria', optimization_level=2)
     return ub
 
+HARDWARE = 'aws-ionq-aria1'
 
+with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
+    file_name_noiseless = 'instance_2995_result_noiseless.txt'
+    file_name_hardware = 'instance_2995_result_hardware.txt'
 
-with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
-    data_b=read_csv_b(3)
+    data_b=read_csv_b(6)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 2 > i > 0:
+        if i == 2995:
+            file_noiseless = open(file_name_noiseless, "a")
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
-            print("qubit number is:", n)
+            file_noiseless.writelines(['qubit number is:', str(n), '\n'])
             L = int(nLc[1])
-            print("term number is:", L)
+            file_noiseless.writelines(['term number is:', str(L), '\n'])
             kappa = float(nLc[2])
-            print('condition number is', kappa)
+            file_noiseless.writelines(['condition number is:', str(kappa), '\n'])
             pauli_strings = [__num_to_pauli_list(l) for l in eval(row_clean[1])]
-            print('Pauli strings are:', pauli_strings)
+            file_noiseless.writelines(['Pauli strings are:', str(pauli_strings), '\n'])
             pauli_circuits = [__num_to_pauli_circuit(l) for l in eval(row_clean[1])]
             coeffs = [float(i) for i in eval(row_clean[2])]
-            print('coefficients are:', coeffs)
+            file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
 
             # circuit depth d
-            d = 3
             ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
-            print('Ub is given by:', data_b.iloc[i].b)
-
+            # file_noiseless.writelines(['ub is given by:', str(ub), '\n'])
 
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', file=file_noiseless, ITR=None, shots=0, optimization_level=2)
+            # remove the last expanded gate
+            ansatz_tree = [ansatz_tree[i] for i in range(len(ansatz_tree) - 1)]
+            file_noiseless.writelines(['Iterations are:', str(Itr), '\n'])
+            file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
+            # file_noiseless.writelines(['Ansatz tree is given by:\n'])
+            # for i, qc in enumerate(ansatz_tree):
+            #     file_noiseless.writelines(['U'+str(i+1)+":", qc., '\n'])
+            file_noiseless.close()
 
             # retrieve hardware result
             V_dagger_V_csv_filename = "V_dagger_V_formal.csv"
@@ -129,17 +137,6 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             print("r", r)
             print("loss:", loss)
             print("combination parameters are:", alphas)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
