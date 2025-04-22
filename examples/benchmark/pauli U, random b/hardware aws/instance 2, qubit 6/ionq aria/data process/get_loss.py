@@ -115,7 +115,7 @@ def __calculate_exp_by_count(count):
     else:
         p0 = sum(count0) / shots
         # Error mitigation
-        # p0 = (p0 - 0.0048) / (1 - 2 * 0.0048)
+        p0 = p0 * 0.9936 + (1-p0)*(1-0.9936)
         p1 = 1 - p0
     return p0 - p1
 
@@ -165,14 +165,14 @@ def calculate_q_from_counts(instance, tree_depth, counts):
     return q
 
 
-def find_true_loss_function(alphas):
+def find_true_loss_function(alphas, tree_depth):
     x = vstack((real(alphas), imag(alphas))).reshape(-1, 1)
     depth = len(alphas) - 1
     # Define the four sectors (quadrants)
     q1 = Q_noiseless[:depth + 1, :depth + 1]
-    q2 = Q_noiseless[:depth + 1, 4:4 + depth + 1]
-    q3 = Q_noiseless[4:4 + depth + 1, :depth + 1]
-    q4 = Q_noiseless[4:4 + depth + 1, 4:4 + depth + 1]
+    q2 = Q_noiseless[:depth + 1, tree_depth:tree_depth + depth + 1]
+    q3 = Q_noiseless[tree_depth:tree_depth + depth + 1, :depth + 1]
+    q4 = Q_noiseless[tree_depth:tree_depth + depth + 1, tree_depth:tree_depth + depth + 1]
 
     # Stack them back together
     top = hstack((q1, q2))
@@ -180,26 +180,26 @@ def find_true_loss_function(alphas):
     Q_tem = vstack((top, bottom))
 
     r1 = r_noiseless[:depth + 1]
-    r2 = r_noiseless[4:4 + depth + 1]
+    r2 = r_noiseless[tree_depth:tree_depth + depth + 1]
 
     r_tem = vstack((r1, r2)).reshape(-1, 1)
     xt = Tensor(x)
     Qt = Tensor(Q_tem) * 2
     rt = Tensor(r_tem) * (-2)
-    return (0.5 * matmul(xt.T, matmul(Qt, xt)) + matmul(rt.T, xt) + 1).item()
+    return abs((0.5 * matmul(xt.T, matmul(Qt, xt)) + matmul(rt.T, xt) + 1).item())
 
 
 
-def calculate_every_loss(Q, r):
+def calculate_every_loss(Q, r, tree_depth):
     ALPHA = []
     LOSS = []
     LOSS_TRUE = []
-    for depth in range(4):
+    for depth in range(tree_depth):
         # Define the four sectors (quadrants)
         q1 = Q[:depth + 1, :depth + 1]
-        q2 = Q[:depth + 1, 4:4 + depth + 1]
-        q3 = Q[4:4 + depth + 1, :depth + 1]
-        q4 = Q[4:4 + depth + 1, 4:4 + depth + 1]
+        q2 = Q[:depth + 1, tree_depth:tree_depth + depth + 1]
+        q3 = Q[tree_depth:tree_depth + depth + 1, :depth + 1]
+        q4 = Q[tree_depth:tree_depth + depth + 1, tree_depth:tree_depth + depth + 1]
 
         # Stack them back together
         top = hstack((q1, q2))
@@ -207,13 +207,13 @@ def calculate_every_loss(Q, r):
         Q_tem = vstack((top, bottom))
 
         r1 = r[:depth + 1]
-        r2 = r[4:4 + depth + 1]
+        r2 = r[tree_depth:tree_depth + depth + 1]
 
         r_tem = vstack((r1, r2))
-        loss, alpha = solve_combination_parameters(Q_tem, r_tem, which_opt='ADAM')
+        loss, alpha = solve_combination_parameters(Q_tem, r_tem, which_opt='ADAM', reg=1)
         LOSS += [loss]
         ALPHA += [alpha]
-        LOSS_TRUE += [find_true_loss_function(alpha)]
+        LOSS_TRUE += [find_true_loss_function(alpha, tree_depth)]
     return LOSS, LOSS_TRUE, ALPHA
 
 
@@ -247,15 +247,17 @@ with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
 
+            # the Ansatz tree depth is 4
+            tree_depth = 4
+
             # retrieve hardware result
             V_dagger_V_counts_csv_filename = "V_dagger_V_counts.csv"
             q_counts_csv_filename = "q_counts.csv"
             V_dagger_V_counts = pd.read_csv(V_dagger_V_counts_csv_filename).values.tolist()
             q_counts = pd.read_csv(q_counts_csv_filename).values.tolist()
 
-
-            V_dagger_V = calculate_V_dagger_V_from_counts(instance, 4, V_dagger_V_counts)
-            q = calculate_q_from_counts(instance, 4, q_counts)
+            V_dagger_V = calculate_V_dagger_V_from_counts(instance, tree_depth, V_dagger_V_counts)
+            q = calculate_q_from_counts(instance, tree_depth, q_counts)
             Q, r = reshape_to_Q_r(V_dagger_V, q)
             # Create DataFrame
             Q_pd = pd.DataFrame(Q)
@@ -267,7 +269,7 @@ with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             r_pd.to_csv(hardware_result_r_csv_filename, index=False)
 
             # calculate loss function for every depth
-            LOSS, LOSS_TRUE, ALPHA = calculate_every_loss(Q, r)
+            LOSS, LOSS_TRUE, ALPHA = calculate_every_loss(Q, r, tree_depth)
             LOSS = pd.DataFrame(LOSS)
             LOSS_TRUE = pd.DataFrame(LOSS_TRUE)
             ALPHA = pd.DataFrame(ALPHA)

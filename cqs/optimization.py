@@ -49,7 +49,7 @@ __all__ = [
 ]
 
 
-def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tuple[float, List]:
+def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None, reg=0) -> Tuple[float, List]:
     r"""Optimization module for solving the optimal combination parameters.
 
     In this module, we implement the CVXOPT package as an external resource package.
@@ -79,7 +79,7 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
         # Note: for more realistic experiments, due to the erroneous results,
         # it is suggested to change the regularization constant to get a better performance.
         # comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-16})['x']
-        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-15})['x']
+        comb_params = qp(Q, r, kktsolver='ldl', options={'kktreg': 1e-2})['x']
 
 
 
@@ -93,7 +93,7 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
 
         def loss_function(x, Q, r):
 
-            return torch.abs(0.5 * torch.matmul(x.T, torch.matmul(Q, x)) + torch.matmul(r.T, x) + 1)
+            return torch.abs(0.5 * torch.matmul(x.T, torch.matmul(Q, x)) + torch.matmul(r.T, x) + 1) + reg * torch.matmul(x.T, x)
 
         # Initialize x, Q, and r
 
@@ -142,7 +142,6 @@ def solve_combination_parameters(Q: ndarray, r: ndarray, which_opt=None) -> Tupl
                 # print(f"Stopping early at epoch {epoch + 1}, loss stagnated at {loss.item():.6f}")
 
                 break
-        print(best_loss)
         comb_params = comb_params.tolist()
         # Train x
     elif which_opt == 'inv':

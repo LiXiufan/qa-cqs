@@ -1,43 +1,26 @@
-# file1 = open("messages.txt", "a")
-# L = ["This is Delhi \n", "This is Paris \n", "This is London \n"]
-# file1.writelines(L)
-# file1.close()
-#
-# # Append-adds at last
-# file1 = open("messages.txt", "a")  # append mode
-# file1.write("Today \n")
-# file1.close()
-
-from numpy import array
-tree_depth = 2
-num_term = 2
+result = {'00000000100001000000': 25, '00001000110000000000': 22, '00001000110000100000': 20}
+mea_corre = [None, None, None, None, None, None, None, None, None, None, None, None, None, [14, 0], [8, 1], [10, 2], [15, 3], [4, 4], [9, 5], [13, 6]]
 
 
-ip_idxes = [[[] for _ in range(tree_depth)] for _ in range(tree_depth)]
-for i in range(tree_depth):
-    for j in range(i, tree_depth):
-        element_idxes = [[str(0) for _ in range(num_term)] for _ in range(num_term)]
-        for k in range(num_term):
-            for l in range(num_term):
-                position = str(i)+ str(j)+ str(k)+ str(l)
-                print(element_idxes[k][l])
-                element_idxes[k][l] = position
-        ip_idxes[i][j] = element_idxes
-print(ip_idxes)
-print()
+mea_corre_dict = {}
+q_count = 0
+for i in mea_corre:
+    if i is not None:
+        mea_corre_dict[str(i[0])] = int(i[1])
+        q_count += 1
+print(mea_corre_dict)
 
-zeros = array([[_ for _ in range(tree_depth)] for _ in range(tree_depth)])
-for i in range(tree_depth):
-    for j in range(i, tree_depth):
-        element_idxes = ip_idxes[i][j]
-        print(element_idxes)
-        print()
-        item = 0
-        for k in range(num_term):
-            for l in range(num_term):
-                item += 1
-                inner_product = element_idxes[k][l]
-                print(inner_product)
-                print()
-        zeros[i][j] = item
-print(zeros)
+result_after = {}
+for outcome in result.keys():
+    reduced_str_lst = [0 for _ in range(q_count)]
+    value = result[outcome]
+    string_list = list(outcome)
+    for k in mea_corre_dict.keys():
+        corre = mea_corre_dict[k]
+        reduced_str_lst[corre] = string_list[int(k)]
+    reduced_str = "".join(reduced_str_lst)
+    if reduced_str in result_after.keys():
+        result_after[reduced_str] += value
+    else:
+        result_after[reduced_str] = value
+print(result_after)
