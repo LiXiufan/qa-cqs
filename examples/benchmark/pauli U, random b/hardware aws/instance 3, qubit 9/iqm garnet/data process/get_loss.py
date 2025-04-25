@@ -34,7 +34,7 @@ from qiskit import QuantumCircuit, QuantumRegister
 from numpy import array, zeros, conj, real, imag
 from numpy import vstack, hstack
 from collections import Counter
-
+from random import random
 from torch import Tensor, matmul
 
 from cqs.remote.calculation import reshape_to_Q_r
@@ -234,7 +234,6 @@ def __calculate_exp_by_count(count, mea_corre):
     else:
         p0 = sum(count0) / shots
         # Error mitigation
-        # p0 = (p0 - 0.0048) / (1 - 2 * 0.0048)
         p1 = 1 - p0
     return p0 - p1
 
@@ -333,7 +332,7 @@ def calculate_every_loss(Q, r, tree_depth):
         r2 = r[tree_depth:tree_depth + depth + 1]
 
         r_tem = vstack((r1, r2))
-        loss, alpha = solve_combination_parameters(Q_tem, r_tem, which_opt='ADAM', reg=0.2)
+        loss, alpha = solve_combination_parameters(Q_tem, r_tem, which_opt='ADAM', reg=4)
         LOSS += [loss]
         ALPHA += [alpha]
         LOSS_TRUE += [find_true_loss_function(alpha, tree_depth)]
@@ -382,6 +381,7 @@ with open('9_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             V_dagger_V = calculate_V_dagger_V_from_counts(instance, tree_depth, V_dagger_V_counts)
             q = calculate_q_from_counts(instance, tree_depth, q_counts)
             Q, r = reshape_to_Q_r(V_dagger_V, q)
+
             # Create DataFrame
             Q_pd = pd.DataFrame(Q)
             r_pd = pd.DataFrame(r)

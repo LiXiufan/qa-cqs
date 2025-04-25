@@ -1,0 +1,8 @@
+qubit number is:3
+term number is:3
+condition number is:3.5456037521362305
+Pauli strings are:[['Y', 'Z', 'Y'], ['I', 'Y', 'Y'], ['X', 'Y', 'I']]
+Coefficients of the terms are:[-1.01, 1.17, 2.76]
+device is:aws-ionq-aria1
+noise level is:0.015
+depth:0

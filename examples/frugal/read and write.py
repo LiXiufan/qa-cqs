@@ -1,10 +1,13 @@
+from numpy import real
 text_file = open('shotfrugalData.txt','r')
 text_file2 = open('shotfrugalDataPlot.txt','a')
 LINES = text_file.readlines()
 
-for l in range(5, len(LINES), 8):
+for l in range(5, len(LINES), 11):
     a = LINES[l]
-    b = a.split(':')[1].strip()
-    c = LINES[l+1]
-    d = c.split(':')[1].strip()
-    text_file2.writelines([b+" "+d, '\n'])
+    exact_result = real(complex(a.split(':')[1].strip()))
+    b = LINES[l+1]
+    ua_result = real(complex(b.split(':')[1].strip()))
+    c = LINES[l+2]
+    wa_result = real(complex(c.split(':')[1].strip()))
+    text_file2.writelines([str(exact_result)+" "+str(ua_result)+" "+str(wa_result), '\n'])

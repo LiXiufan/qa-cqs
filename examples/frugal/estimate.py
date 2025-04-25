@@ -141,9 +141,12 @@ def main(NRANGE, SHOTS, SAMPLE, FILE):
                 expec = eval_exp(n, U_b, U_b.compose(U[j]), shots=shots_allocated[label][j])
                 H_exp[label] += BETA[j] * expec
 
+        file1.writelines(["Exact result:", str(H_exp['exact']), '\n'])
+        file1.writelines(["UA result:", str(H_exp['uniform']), '\n'])
+        file1.writelines(["WA result:", str(H_exp['weighted']), '\n'])
+
         error_uniform = linalg.norm(H_exp['uniform'] - H_exp['exact']).item()
         error_weighted = linalg.norm(H_exp['weighted'] - H_exp['exact']).item()
-        file1.writelines(["UDS error:", str(error_uniform), '\n'])
-        file1.writelines(["WDS error:", str(error_weighted), '\n'])
+        file1.writelines(["UA error:", str(error_uniform), '\n'])
+        file1.writelines(["WA error:", str(error_weighted), '\n'])
         file1.writelines(['\n'])
-    # return ErrorUniform, ErrorWeighted

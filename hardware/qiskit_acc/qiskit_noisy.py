@@ -73,12 +73,12 @@ def __run_circuit(qc, shots, **kwargs):
                     if i in kwargs.keys()}
     if 'device' in transpile_kwargs and transpile_kwargs['device'] == "qiskit_native":
         cir_native = qc  # Use the original circuit if 'device' is missing or 'qiskit_native'
-    elif 'device' in transpile_kwargs and transpile_kwargs['device'] == "IQM":
-        backend = AerSimulator()
-        cir_native=transpile_qiskit(qc, backend, optimization_level=3, basis_gates=["rx", "ry", "cx"]
-                         )
+    elif 'device' in transpile_kwargs and transpile_kwargs['device'] == "aws-ionq-aria1":
+        cir_native=transpile_circuit(qc, provider='ionq', device='Aria', optimization_level=transpile_kwargs['optimization_level'])
+    elif 'device' in transpile_kwargs and transpile_kwargs['device'] == "aws-iqm-garnet":
+        cir_native=transpile_circuit(qc, provider='iqm-sim', optimization_level=transpile_kwargs['optimization_level'])
     else:
-        cir_native = transpile_circuit(qc=qc, **transpile_kwargs)
+        cir_native = qc
     noisy_result = get_noisy_counts(qc=cir_native, shots=shots, **noisy_kwargs)
     p0 = 0
     p1 = 0
@@ -103,9 +103,6 @@ def __run_circuit(qc, shots, **kwargs):
             else:
                 p0 = sum(count0) / shots
                 p1 = sum(count1) / shots
-    # Error mitigation
-    # p0 =(p0-noisy_kwargs["readout_error"])/(1-2*noisy_kwargs["readout_error"])
-    # p1=1-p0
     return p0 - p1
 
 

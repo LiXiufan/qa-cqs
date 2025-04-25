@@ -35,3 +35,4 @@ SAMPLE = 200
 FILE = 'shotfrugalData.txt'
 main(NRANGE, SHOTS, SAMPLE, FILE)
 
+

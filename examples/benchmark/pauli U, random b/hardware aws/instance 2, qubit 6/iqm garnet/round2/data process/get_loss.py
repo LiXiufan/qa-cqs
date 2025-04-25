@@ -65,6 +65,15 @@ r_noiseless = array([[ 0.00000000e+00],
  [ 6.49480469e-17],
  [-3.34921511e+00]])
 
+
+IQM_initial_layout = {
+    '3': [9, 15, 11],
+    '4': [9, 8, 14, 13],
+    '5': [9, 8, 10, 14, 4],
+    '6': [9, 8, 10, 14, 4, 13],
+    '7': [9, 8, 10, 14, 4, 13, 15]
+}
+
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
     pauli_list = [paulis[int(i)] for i in num_list]

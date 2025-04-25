@@ -115,7 +115,7 @@ def transpile_simulation(qiskit_qc):
     qc = transpile(
         qiskit_qc,
         simulator,
-        optimization_level=3,
+        optimization_level=2,
         basis_gates=['rx', 'ry', 'cz'],  # Allowed gates for hardware
         coupling_map=IQM_coupling_map,
         initial_layout=initial_layout
@@ -154,11 +154,13 @@ def transpile_to_IQM_braket(qiskit_qc: QuantumCircuit) -> Circuit:
     qc = transpile(
         qiskit_qc,
         simulator,
-        optimization_level=3,
+        optimization_level=2,
         basis_gates=['rx', 'ry', 'cz'],  # Allowed gates for hardware
         coupling_map=IQM_coupling_map,
         initial_layout=initial_layout
     )
+
+    print(qc)
 
     measurement_correspondence=[extract_indices(str([qc.data[i]])) for i in range(len(qc.data)-qiskit_qc.num_qubits,len(qc.data),1)]
     qc.remove_final_measurements()
@@ -247,15 +249,20 @@ if __name__ == '__main__':
 
 
 
-    n = 6
+    n = 7
     # Generate a random 5-qubit quantum circuit with a depth of 10
-    qc = random_circuit(n, max_operands=2, depth=10, measure=False)
+    # qc = random_circuit(n, max_operands=2, depth=3, measure=False)
+    qc = QuantumCircuit(n)
+    for i in range(n):
+        qc.h(i)
+    qc.swap(0,1)
+    qc.swap(1,2)
+    print(qc)
     # qc=QuantumCircuit(5)
     # qc.rx(1,0)
     # qc.measure_all()
 
-    measurement_correspondence,IQM_braket_circuit = transpile_to_IQM_braket(qc)
-    print(measurement_correspondence)
+    IQM_braket_circuit = transpile_simulation(qc)
     # # transpile_to_IQM_braket(qc)
     #
     #

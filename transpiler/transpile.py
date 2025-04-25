@@ -133,9 +133,11 @@ def remove_idle_qwires(circ):
 
     # Identify and remove idle qubits
     idle_wires = list(dag.idle_wires())
+
     for w in idle_wires:
         dag._remove_idle_wire(w)
-        dag.qubits.remove(w)
+        if w in dag.qubits:
+            dag.qubits.remove(w)
 
     # Clear quantum registers to reflect the updated circuit
     dag.qregs = OrderedDict()
@@ -147,7 +149,7 @@ def remove_idle_qwires(circ):
 # **Transpile Quantum Circuit for Simulation**
 # ---------------------------------------------------------------------------
 
-def __transpile_circuit_to_iqm_sim(qc: QuantumCircuit, optimization_level=3):
+def __transpile_circuit_to_iqm_sim(qc: QuantumCircuit, optimization_level=2):
     """
     Transpile a given quantum circuit for simulation using AerSimulator.
 
@@ -163,7 +165,7 @@ def __transpile_circuit_to_iqm_sim(qc: QuantumCircuit, optimization_level=3):
     # Initialize Qiskit's AerSimulator for running the circuit
     simulator = AerSimulator()
 
-    # Perform Qiskit transpilation with optimization level 3
+    # Perform Qiskit transpilation with optimization level
     qc = transpile(
         qc,
         simulator,
@@ -179,7 +181,8 @@ def __transpile_circuit_to_iqm_sim(qc: QuantumCircuit, optimization_level=3):
     )
 
     # Perform final transpilation with inverse layout and remove idle qubits
-    qc_qiskit = transpile(qc, optimization_level=0, initial_layout=inverse_layout)
+    qc_qiskit = transpile(qc, optimization_level=optimization_level, initial_layout=inverse_layout)
+
     qc_qiskit = remove_idle_qwires(qc_qiskit)
 
     return qc_qiskit  # Return optimized and cleaned-up circuit
@@ -192,7 +195,7 @@ def extract_indices(instruction_str):
         return [int(matches.group(1)), int(matches.group(2))]
     return None
 
-def __transpile_circuit_to_iqm(qc: QuantumCircuit, optimization_level=3) -> Circuit:
+def __transpile_circuit_to_iqm(qc: QuantumCircuit, optimization_level=2) -> Circuit:
 
     qc.measure_all()
 
