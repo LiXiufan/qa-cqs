@@ -27,11 +27,15 @@
 import csv
 import qiskit.qasm3 as qasm3
 import pandas as pd
+from numpy import array, real, imag
+from torch import Tensor, matmul
+from numpy import vstack, hstack
 from instances_b.reader_b import read_csv_b
 from cqs.object import Instance
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.circuit.random import random_circuit
-
+from cqs.local.calculation import calculate_Q_r
+from cqs.optimization import solve_combination_parameters
 from examples.benchmark.cqs_main import main_prober, main_solver
 
 from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, submit_all_inner_products_in_q
@@ -39,10 +43,36 @@ from cqs.remote.calculation import submit_all_inner_products_in_V_dagger_V, subm
 # IONQ device two qubit gate fidelity: 98.510% = 0.9851
 # IQM device two qubit gate fidelity: 99.163% = 0.9916
 # IQM device readout error: 97.325% = 0.97325
-DEVICES = ["aws-ionq-aria1", "aws-iqm-garnet"]
-IONQ_NOISE_LEVEL = [0.005, 0.01, 0.015, 0.02, 0.025]
-IQM_NOISE_LEVEL = [0.002, 0.005, 0.008, 0.011, 0.014]
-NOISE_LEVEL = [IONQ_NOISE_LEVEL, IQM_NOISE_LEVEL]
+DEVICES = "aws-ionq-aria1"
+IONQ_NOISE_LEVEL = 0.01
+NOISE_LEVEL = IONQ_NOISE_LEVEL
+
+Q_noiseless = array([[ 3.98710000e+01, -1.49624972e-01, -1.20480736e-14, -1.96917482e-15,
+  -2.06790141e-16, -4.67625938e-17,  2.65927680e+01,  2.22044605e-16],
+ [-1.49624972e-01,  3.98710000e+01, -3.44724249e-17, -1.03899112e-14,
+   4.67625938e-17, -5.81934501e-16, -0.00000000e+00,  2.65927680e+01],
+ [-1.20480736e-14, -3.44724249e-17,  3.98710000e+01,  1.49624972e-01,
+  -2.65927680e+01,  0.00000000e+00,  2.87677659e-15,  1.66237024e-15],
+ [-1.96917482e-15, -1.03899112e-14,  1.49624972e-01,  3.98710000e+01,
+  -2.22044605e-16, -2.65927680e+01, -1.66237024e-15,  2.15455986e-15],
+ [ 2.06790141e-16,  4.67625938e-17, -2.65927680e+01, -2.22044605e-16,
+   3.98710000e+01, -1.49624972e-01, -1.20480736e-14, -1.96917482e-15],
+ [-4.67625938e-17,  5.81934501e-16,  0.00000000e+00, -2.65927680e+01,
+  -1.49624972e-01,  3.98710000e+01, -3.44724249e-17, -1.03899112e-14],
+ [ 2.65927680e+01, -0.00000000e+00, -2.87677659e-15, -1.66237024e-15,
+  -1.20480736e-14, -3.44724249e-17,  3.98710000e+01,  1.49624972e-01],
+ [ 2.22044605e-16,  2.65927680e+01,  1.66237024e-15, -2.15455986e-15,
+  -1.96917482e-15, -1.03899112e-14,  1.49624972e-01,  3.98710000e+01]])
+r_noiseless = array([[ 0.00000000e+00],
+ [ 3.97000000e+00],
+ [-6.49480469e-17],
+ [-1.80000000e-01],
+ [ 0.00000000e+00],
+ [ 0.00000000e+00],
+ [ 6.49480469e-17],
+ [-3.34921511e+00]])
+
+
 
 def __num_to_pauli_list(num_list):
     paulis = ['I', 'X', 'Y', 'Z']
@@ -75,6 +105,59 @@ def create_random_circuit_in_native_gate(n, d):
     # ub = transpile_circuit(ub, device='Aria', optimization_level=2)
     return ub
 
+
+def find_true_loss_function(alphas, tree_depth):
+    x = vstack((real(alphas), imag(alphas))).reshape(-1, 1)
+    depth = len(alphas) - 1
+    # Define the four sectors (quadrants)
+    q1 = Q_noiseless[:depth + 1, :depth + 1]
+    q2 = Q_noiseless[:depth + 1, tree_depth:tree_depth + depth + 1]
+    q3 = Q_noiseless[tree_depth:tree_depth + depth + 1, :depth + 1]
+    q4 = Q_noiseless[tree_depth:tree_depth + depth + 1, tree_depth:tree_depth + depth + 1]
+
+    # Stack them back together
+    top = hstack((q1, q2))
+    bottom = hstack((q3, q4))
+    Q_tem = vstack((top, bottom))
+
+    r1 = r_noiseless[:depth + 1]
+    r2 = r_noiseless[tree_depth:tree_depth + depth + 1]
+
+    r_tem = vstack((r1, r2)).reshape(-1, 1)
+    xt = Tensor(x)
+    Qt = Tensor(Q_tem) * 2
+    rt = Tensor(r_tem) * (-2)
+    return abs((0.5 * matmul(xt.T, matmul(Qt, xt)) + matmul(rt.T, xt) + 1).item())
+
+
+def calculate_every_loss(Q, r, tree_depth):
+    ALPHA = []
+    LOSS = []
+    LOSS_TRUE = []
+    for depth in range(tree_depth):
+        # Define the four sectors (quadrants)
+        q1 = Q[:depth + 1, :depth + 1]
+        q2 = Q[:depth + 1, tree_depth:tree_depth + depth + 1]
+        q3 = Q[tree_depth:tree_depth + depth + 1, :depth + 1]
+        q4 = Q[tree_depth:tree_depth + depth + 1, tree_depth:tree_depth + depth + 1]
+
+        # Stack them back together
+        top = hstack((q1, q2))
+        bottom = hstack((q3, q4))
+        Q_tem = vstack((top, bottom))
+
+        r1 = r[:depth + 1]
+        r2 = r[tree_depth:tree_depth + depth + 1]
+
+        r_tem = vstack((r1, r2))
+        loss, alpha = solve_combination_parameters(Q_tem, r_tem, which_opt='ADAM', reg=1)
+        LOSS += [loss]
+        ALPHA += [alpha]
+        LOSS_TRUE += [find_true_loss_function(alpha, tree_depth)]
+    return LOSS, LOSS_TRUE, ALPHA
+
+
+
 with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     file_name_noiseless = 'instance_2995_result_noiseless.txt'
     file_name_noisy = 'instance_2995_result_noisy.txt'
@@ -100,7 +183,7 @@ with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             file_noiseless.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
 
             # circuit depth d
-            ub = qasm3.loads(data_b.iloc[i].qasm)#random_circuit(num_qubits=3, max_operands=2, depth=3, measure=False)
+            ub = qasm3.loads(data_b.iloc[i].qasm)
 
             # generate instance
             instance = Instance(n, L, kappa)
@@ -112,31 +195,37 @@ with open('6_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             file_noiseless.writelines(['Losses are:', str(LOSS), '\n'])
             file_noiseless.close()
 
+            tree_depth = len(ansatz_tree)
+
             # perform noisy simulation
-            file_noisy = open(file_name_noisy, "a")
-            file_noisy.writelines(['qubit number is:', str(n), '\n'])
-            file_noisy.writelines(['term number is:', str(L), '\n'])
-            file_noisy.writelines(['condition number is:', str(kappa), '\n'])
-            file_noisy.writelines(['Pauli strings are:', str(pauli_strings), '\n'])
-            file_noisy.writelines(['Coefficients of the terms are:', str(coeffs), '\n'])
+            Q_noisy, r_noisy = calculate_Q_r(instance, ansatz_tree, backend='qiskit-noisy', device=DEVICES,
+                                             shots=0, optimization_level=2,
+                                             noise_level_two_qubit=NOISE_LEVEL,
+                                             noise_level_one_qubit=None,
+                                             readout_error=None)
 
+            # Create DataFrame
+            Q_noisy_pd = pd.DataFrame(Q_noisy)
+            r_noisy_pd = pd.DataFrame(r_noisy)
+            # Save to CSV
+            noisy_simulation_Q_csv_filename = "noisy_simulation_Q.csv"
+            noisy_simulation_r_csv_filename = "noisy_simulation_r.csv"
+            Q_noisy_pd.to_csv(noisy_simulation_Q_csv_filename, index=False)
+            r_noisy_pd.to_csv(noisy_simulation_r_csv_filename, index=False)
 
-            for j in range(2):
-                device = DEVICES[j]
-                noise_level_two_qubit = NOISE_LEVEL[j]
-                for l in noise_level_two_qubit:
-                    loss, alphas = main_solver(instance, ansatz_tree, file_noisy, backend='qiskit-noisy', device=device,
-                                shots=0, optimization_level=2,
-                                noise_level_two_qubit=l,
-                                noise_level_one_qubit=None,
-                                readout_error=None)
-                    file_noisy.writelines(['device is:', device, '\n'])
-                    file_noisy.writelines(['noise level is:', str(l), '\n'])
-                    file_noisy.writelines(['loss is:', str(loss), '\n'])
-                    file_noisy.writelines(['alphas are:', str(alphas), '\n'])
-                    file_noisy.writelines(['\n'])
+            LOSS, LOSS_TRUE, ALPHA = calculate_every_loss(Q_noisy, r_noisy, tree_depth)
+            LOSS = pd.DataFrame(LOSS)
+            LOSS_TRUE = pd.DataFrame(LOSS_TRUE)
+            ALPHA = pd.DataFrame(ALPHA)
 
-            file_noisy.close()
+            # Save to CSV
+            noisy_simulation_loss_csv_filename = "noisy_simulation_loss.csv"
+            noisy_simulation_true_loss_csv_filename = "noisy_simulation_true_loss.csv"
+            noisy_simulation_alpha_csv_filename = "noisy_simulation_alpha.csv"
+
+            LOSS.to_csv(noisy_simulation_loss_csv_filename, index=False)
+            LOSS_TRUE.to_csv(noisy_simulation_true_loss_csv_filename, index=False)
+            ALPHA.to_csv(noisy_simulation_alpha_csv_filename, index=False)
 
 
 

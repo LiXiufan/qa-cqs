@@ -43,7 +43,6 @@ if __name__ == "__main__":
     print(get_noisy_counts(transpiled_qc, 0, 0, 0))
     print(get_noisy_counts(transpiled_qc, 0, 0, 0))
     print(get_noisy_counts(transpiled_qc, 0, 0, 0))
-    print("lalalalal")
 
     # GET NOISY probabilities without the presence of shot noise
     print(get_noisy_counts(transpiled_qc, 0, 0.02, 0, 0))
