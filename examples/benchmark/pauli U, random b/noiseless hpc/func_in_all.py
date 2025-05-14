@@ -774,6 +774,8 @@ def main_prober(instance, backend=None, ITR=None, eps=None, **kwargs):
             loss, alphas, ansatz_tree = __solve_and_expand(instance, ansatz_tree, backend=backend, **kwargs)
             # print("loss:", loss)
             LOSS.append(loss)
+            if loss < eps:
+                break
     # print("combination parameters are:", alphas)
 
     return Itr, LOSS, ansatz_tree
@@ -783,7 +785,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
     data_b=read_csv_b(3)
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for i, row in enumerate(reader):
-        if 3 > i > 0:
+        if 2 > i > 0:
             row_clean = [j for j in ''.join(row).split('"') if j != ',']
             nLc = row_clean[0].split(',')
             n = int(nLc[0])
@@ -807,7 +809,7 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # generate instance
             instance = Instance(n, L, kappa)
             instance.generate(given_coeffs=coeffs, given_unitaries=pauli_circuits, given_ub=ub)
-            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=None, shots=0, optimization_level=2)
+            Itr, LOSS, ansatz_tree = main_prober(instance, backend='qiskit-noiseless', ITR=20, shots=0, optimization_level=2)
             print(Itr)
             print(LOSS)
             # matrix = instance.get_matrix()
