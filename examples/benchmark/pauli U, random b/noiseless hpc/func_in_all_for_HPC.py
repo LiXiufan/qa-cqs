@@ -52,7 +52,9 @@ from sympy import Matrix
 from typing import List, Tuple
 import torch
 import torch.optim as optim
+import sys
 
+job_id = int(sys.argv[1]) #accepts job_ids passed from the shell script
 
 class Instance:
     r"""Set the A matrix and unitary for b.
