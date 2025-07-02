@@ -26,6 +26,8 @@
 """
 
 import csv
+import sys
+
 import qiskit.qasm3 as qasm3
 import pathlib
 import pandas as pd
@@ -50,6 +52,8 @@ from sympy import Matrix
 from typing import List, Tuple
 import torch
 import torch.optim as optim
+
+job_id = int(sys.argv[1])
 
 
 class Instance:
@@ -816,17 +820,3 @@ with open('3_qubit_data_generation_matrix_A.csv', 'r', newline='') as csvfile:
             # print("The first example returns with a matrix:")
             # print(matrix)
             # print()
-
-
-
-
-
-
-
-
-
-
-
-
-
-

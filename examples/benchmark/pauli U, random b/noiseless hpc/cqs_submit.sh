@@ -10,6 +10,8 @@
 #PBS -l select=1:ncpus=12:mpiprocs=12
 #PBS -j oe
 
+#add memory
+
 cd $PBS_O_WORKDIR
 
 module load python/3.8
@@ -21,4 +23,5 @@ K=$((PBS_ARRAYID % K_max))
 
 echo "Running test.py with L=$L, K=$K"
 
+#currently job id is the only input
 python3 test.py --L $L --K $K
